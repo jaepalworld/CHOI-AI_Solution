@@ -9,18 +9,37 @@ import {
   Card,
   CardMedia,
   CardContent,
-  Grid
+  Grid,
+  Avatar,
+  Menu,
+  MenuItem,
+  IconButton
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../firebase/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 const BACKEND_URL = 'http://localhost:3000';
 
 const HairAI = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {
-    // 인증 상태 확인
+    // Firebase 인증 상태 감지
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    });
+
+    // 기존 토큰 확인
     const checkAuth = async () => {
       const token = localStorage.getItem('accessToken');
       if (!token) {
@@ -45,18 +64,38 @@ const HairAI = () => {
         console.error('Auth check failed:', error);
         localStorage.removeItem('accessToken');
         setIsAuthenticated(false);
-        navigate('/login');
       }
     };
 
     checkAuth();
+    return () => unsubscribe();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('kakaoToken');
-    setIsAuthenticated(false);
-    navigate('/login');
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('kakaoToken');
+      setIsAuthenticated(false);
+      setUser(null);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    handleClose();
+  };
+
+  const handleMyPage = () => {
+    navigate('/mypage');
+    handleClose();
   };
 
   return (
@@ -72,14 +111,34 @@ const HairAI = () => {
           </Typography>
           <Button color="inherit" sx={{ color: '#333' }}>Try AI</Button>
           <Button color="inherit" sx={{ color: '#333' }}>Styles</Button>
-          {isAuthenticated ? (
-            <Button 
-              color="inherit" 
-              sx={{ color: '#333' }} 
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
+          {isAuthenticated && user ? (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton onClick={handleMenu} sx={{ ml: 2 }}>
+                <Avatar 
+                  src={user.photoURL}
+                  alt={user.displayName || user.email}
+                  sx={{ width: 32, height: 32 }}
+                >
+                  {(user.displayName || user.email || '?')[0].toUpperCase()}
+                </Avatar>
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem onClick={handleMyPage}>마이페이지</MenuItem>
+                <MenuItem onClick={handleLogout}>로그아웃</MenuItem>
+              </Menu>
+            </Box>
           ) : (
             <Button 
               color="inherit" 
