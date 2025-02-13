@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Container, 
-  Paper, 
-  Typography, 
-  TextField, 
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  TextField,
   Button,
   Grid,
   Divider,
   Alert,
-  CircularProgress
+  CircularProgress,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase/firebase';
@@ -18,12 +20,62 @@ import { doc, setDoc } from 'firebase/firestore';
 import KakaoLogin from 'react-kakao-login';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+
+const ImageMarquee = ({ images, direction }) => {
+  return (
+    <Box
+      sx={{
+        height: '100vh',
+        overflow: 'hidden',
+        width: '16.666667%',
+        pl: direction === 'up' ? 9 : -1
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          animation: `slide 20s linear infinite ${direction === 'up' ? 'reverse' : 'normal'}`
+        }}
+      >
+        {[...images, ...images].map((img, index) => (
+          <Box
+            key={index}
+            sx={{
+              width: '12rem',
+              height: '12rem',
+              borderRadius: 2,
+              overflow: 'hidden',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'transparent'
+            }}
+          >
+            <img
+              src={`/assets/login/${direction === 'up' ? 'girl' : 'man'}/${img}`}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            />
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+};
 
 const Signup = () => {
   const navigate = useNavigate();
   const kakaoClientId = '026cb31474c35d7d573fd513fa87b9f6';
-  const googleClientId = 'YOUR_GOOGLE_CLIENT_ID';
-  
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -32,6 +84,11 @@ const Signup = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const leftImages = ['g1.jpg', 'g2.jpg', 'g3.jpg', 'g4.jpg', 'g5.jpg', 'g6.jpg', 'g7.jpg'];
+  const rightImages = ['m1.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,8 +96,15 @@ const Signup = () => {
       ...prev,
       [name]: value
     }));
-    // 입력이 변경될 때 에러 메시지 초기화
     setError('');
+  };
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleClickShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   const validateForm = () => {
@@ -49,7 +113,6 @@ const Signup = () => {
       return false;
     }
 
-    // 이메일 형식 검사
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError('유효한 이메일 주소를 입력해주세요.');
@@ -71,7 +134,7 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -79,19 +142,13 @@ const Signup = () => {
     try {
       setLoading(true);
       setError('');
-      
-      console.log('회원가입 시도:', { email: formData.email, name: formData.name });
-      
-      // Firebase Authentication으로 사용자 생성
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
 
-      console.log('Authentication 성공:', userCredential.user.uid);
-
-      // Firestore에 사용자 추가 정보 저장
       try {
         const userData = {
           name: formData.name,
@@ -101,17 +158,11 @@ const Signup = () => {
         };
 
         await setDoc(doc(db, 'users', userCredential.user.uid), userData);
-        console.log('Firestore 데이터 저장 성공');
-        
-        // 성공 시 로그인 페이지로 이동
         navigate('/login');
       } catch (firestoreError) {
-        console.error('Firestore 저장 오류:', firestoreError);
         setError('사용자 정보 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
       }
     } catch (error) {
-      console.error('회원가입 오류:', error.code, error.message);
-      
       switch (error.code) {
         case 'auth/email-already-in-use':
           setError('이미 사용 중인 이메일입니다.');
@@ -119,14 +170,8 @@ const Signup = () => {
         case 'auth/invalid-email':
           setError('유효하지 않은 이메일 형식입니다.');
           break;
-        case 'auth/operation-not-allowed':
-          setError('이메일/비밀번호 로그인이 비활성화되어 있습니다.');
-          break;
         case 'auth/weak-password':
           setError('비밀번호가 너무 약합니다. 더 강력한 비밀번호를 사용해주세요.');
-          break;
-        case 'auth/network-request-failed':
-          setError('네트워크 연결을 확인해주세요.');
           break;
         default:
           setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
@@ -138,57 +183,76 @@ const Signup = () => {
 
   const kakaoOnSuccess = async (data) => {
     console.log('Kakao signup success:', data);
-    try {
-      // 여기에 카카오 로그인 처리 로직 추가
-      navigate('/hairai');
-    } catch (error) {
-      console.error('Kakao signup error:', error);
-      setError('카카오 로그인 중 오류가 발생했습니다.');
-    }
+    navigate('/');
   };
-  
+
   const kakaoOnFailure = (err) => {
     console.error('Kakao signup error:', err);
     setError('카카오 로그인 중 오류가 발생했습니다.');
   };
 
   const googleOnSuccess = (credentialResponse) => {
-    try {
-      const decoded = jwtDecode(credentialResponse.credential);
-      console.log('Google signup success:', decoded);
-      navigate('/hairai');
-    } catch (error) {
-      console.error('Google signup error:', error);
-      setError('구글 로그인 중 오류가 발생했습니다.');
-    }
+    const decoded = jwtDecode(credentialResponse.credential);
+    console.log('Google signup success:', decoded);
+    navigate('/');
   };
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <Box sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(45deg, #FF9A8B 0%, #FF6A88 55%, #FF99AC 100%)',
         display: 'flex',
-        alignItems: 'center'
+        minHeight: '100vh',
+        background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)'
       }}>
-        <Container maxWidth="sm">
-          <Paper elevation={3} sx={{
-            padding: 4,
+        {/* Left Marquee */}
+        <ImageMarquee images={leftImages} direction="up" />
+
+        {/* Main Content */}
+        <Container maxWidth="sm" sx={{ py: 8, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography
+              variant="h4"
+              component="div"
+              sx={{
+                cursor: 'pointer',
+                fontWeight: 600,
+                color: 'white',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+                mb: 2
+              }}
+              onClick={() => navigate('/')}
+            >
+              {/* HAIR AI */}
+            </Typography>
+          </Box>
+
+          <Paper elevation={24} sx={{
+            padding: { xs: 3, md: 4 },
             backdropFilter: 'blur(10px)',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            borderRadius: 2
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
           }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-                Create Account
+              <Typography
+                variant="h4"
+                gutterBottom
+                sx={{
+                  fontWeight: 700,
+                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+              >
+                HAIR AI
               </Typography>
-              <Typography color="text.secondary">
-                Join HairAI and transform your style
+              <Typography color="text.secondary" sx={{ fontSize: '1.1rem' }}>
+                Design Your Self
               </Typography>
             </Box>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
                 {error}
               </Alert>
             )}
@@ -203,8 +267,14 @@ const Signup = () => {
                 margin="normal"
                 variant="outlined"
                 required
-                autoComplete="name"
-                disabled={loading}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&:hover fieldset': {
+                      borderColor: '#2196F3',
+                    },
+                  },
+                }}
               />
               <TextField
                 fullWidth
@@ -216,33 +286,70 @@ const Signup = () => {
                 margin="normal"
                 variant="outlined"
                 required
-                autoComplete="email"
-                disabled={loading}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&:hover fieldset': {
+                      borderColor: '#2196F3',
+                    },
+                  },
+                }}
               />
               <TextField
                 fullWidth
                 label="Password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={handleChange}
                 margin="normal"
                 variant="outlined"
                 required
-                helperText="비밀번호는 최소 6자 이상이어야 합니다"
-                disabled={loading}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={handleClickShowPassword} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&:hover fieldset': {
+                      borderColor: '#2196F3',
+                    },
+                  },
+                }}
               />
               <TextField
                 fullWidth
                 label="Confirm Password"
                 name="confirmPassword"
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 margin="normal"
                 variant="outlined"
                 required
-                disabled={loading}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={handleClickShowConfirmPassword} edge="end">
+                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&:hover fieldset': {
+                      borderColor: '#2196F3',
+                    },
+                  },
+                }}
               />
               <Button
                 type="submit"
@@ -253,21 +360,22 @@ const Signup = () => {
                   mt: 3,
                   mb: 2,
                   py: 1.5,
-                  background: 'linear-gradient(45deg, #FF6A88 30%, #FF99AC 90%)',
+                  borderRadius: 2,
+                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                  boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #FF5277 30%, #FF8599 90%)'
-                  }
+                    background: 'linear-gradient(45deg, #1976D2 30%, #21CBF3 90%)',
+                    boxShadow: '0 4px 6px 2px rgba(33, 203, 243, .4)',
+                  },
+                  textTransform: 'none',
+                  fontSize: '1.1rem'
                 }}
               >
-                {loading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  'Sign Up'
-                )}
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign Up'}
               </Button>
             </Box>
 
-            <Divider sx={{ my: 3 }}>or</Divider>
+            <Divider sx={{ my: 3 }}>or continue with</Divider>
 
             <Grid container spacing={2}>
               <Grid item xs={12}>
@@ -280,16 +388,19 @@ const Signup = () => {
                       fullWidth
                       variant="outlined"
                       onClick={onClick}
-                      disabled={loading}
-                      sx={{ 
+                      sx={{
                         py: 1.5,
                         bgcolor: '#FEE500',
                         color: '#000000',
                         borderColor: '#FEE500',
+                        borderRadius: 2,
                         '&:hover': {
                           bgcolor: '#FDD800',
-                          borderColor: '#FDD800'
-                        }
+                          borderColor: '#FDD800',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        },
+                        textTransform: 'none',
+                        fontSize: '1rem'
                       }}
                     >
                       Continue with Kakao
@@ -300,27 +411,28 @@ const Signup = () => {
               <Grid item xs={12}>
                 <GoogleLogin
                   onSuccess={googleOnSuccess}
-                  onError={() => {
-                    console.log('Google Login Failed');
-                    setError('구글 로그인에 실패했습니다.');
-                  }}
+                  onError={() => console.log('Google Login Failed')}
                   width="100%"
                   size="large"
                   text="continue_with"
                   shape="rectangular"
-                  disabled={loading}
                 />
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Box sx={{ mt: 4, textAlign: 'center' }}>
               <Typography color="text.secondary">
                 Already have an account?{' '}
-                <Button 
-                  color="primary" 
-                  sx={{ textTransform: 'none' }}
+                <Button
                   onClick={() => navigate('/login')}
-                  disabled={loading}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: '#2196F3',
+                    '&:hover': {
+                      background: 'rgba(33, 150, 243, 0.1)'
+                    }
+                  }}
                 >
                   Sign in
                 </Button>
@@ -328,9 +440,27 @@ const Signup = () => {
             </Box>
           </Paper>
         </Container>
+
+        {/* Right Marquee */}
+        <ImageMarquee images={rightImages} direction="down" />
       </Box>
     </GoogleOAuthProvider>
   );
 };
+
+const styles = `
+@keyframes slide {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
 
 export default Signup;

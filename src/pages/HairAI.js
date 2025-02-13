@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -16,26 +16,141 @@ import {
   MenuItem,
   IconButton,
   useTheme,
-  alpha
+  // alpha,
+  Fade,
+  Zoom,
+  CircularProgress,
+  Paper,
+  // Rating
 } from '@mui/material';
+
+// Timeline components from @mui/lab
+import {
+  Timeline,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineConnector,
+  TimelineContent,
+  TimelineDot
+} from '@mui/lab';
+
+// Icons
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+
+// Firebase
 import { auth } from '../firebase/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+
+// Slider
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-const BACKEND_URL = 'http://localhost:3000';
+
+
+// Lazy loaded components
+const ReviewCarousel = lazy(() => import('../components/ReviewCarousel'));
+// const FeatureCard = lazy(() => import('../components/FeatureCard'));
+
+// Wave Background Component
+const WaveBackground = () => (
+  <Box
+    sx={{
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      overflow: 'hidden',
+      zIndex: 0,
+      pointerEvents: 'none'
+    }}
+  >
+    <svg
+      viewBox="0 0 1440 320"
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        height: 'auto',
+        transform: 'translateY(50%)',
+        opacity: 0.1
+      }}
+    >
+      <path
+        fill="#2196F3"
+        fillOpacity="0.5"
+        d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+      >
+        <animate
+          attributeName="d"
+          dur="10s"
+          repeatCount="indefinite"
+          values="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z;
+                 M0,160L48,181.3C96,203,192,245,288,261.3C384,277,480,267,576,234.7C672,203,768,149,864,133.3C960,117,1056,139,1152,154.7C1248,171,1344,181,1392,186.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+        />
+      </path>
+    </svg>
+  </Box>
+);
+
+// Scroll Progress Bar Component
+const ScrollProgressBar = () => {
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const currentScroll = window.scrollY;
+      setScrollProgress((currentScroll / totalScroll) * 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '3px',
+        zIndex: 2000,
+        background: '#e0e0e0'
+      }}
+    >
+      <Box
+        sx={{
+          height: '100%',
+          width: `${scrollProgress}%`,
+          background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+          transition: 'width 0.1s ease'
+        }}
+      />
+    </Box>
+  );
+};
+
+// Loading Skeleton
+const SkeletonLoader = () => (
+  <Box sx={{ padding: 2 }}>
+    <CircularProgress />
+  </Box>
+);
 
 const HairAI = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
+  // const theme = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const sliderSettings = {
     dots: true,
@@ -44,13 +159,12 @@ const HairAI = () => {
     slidesToShow: 1,
     slidesToScroll: 1,
     autoplay: true,
-    autoplaySpeed: 6000, // 8초로 변경
+    autoplaySpeed: 8000,
     arrows: false,
     pauseOnHover: false,
     dotsClass: "slick-dots custom-dots",
   };
 
-  // 슬라이더 콘텐츠를 배열로 정의합니다
   const sliderContent = [
     {
       image: 'main1.png',
@@ -69,6 +183,48 @@ const HairAI = () => {
     }
   ];
 
+  // Features data
+  const features = [
+    {
+      title: 'AI 광고',
+      description: '인공지능으로 제작하는 맞춤형 광고',
+      image: 'Advertising.jpg',
+      icon: <AutoAwesomeIcon />
+    },
+    {
+      title: '헤어 스타일 바꾸기',
+      description: 'AI가 추천하는 새로운 헤어스타일',
+      image: 'hair.jpg',
+      icon: <AutoAwesomeIcon />
+    },
+    {
+      title: '얼굴 바꾸기',
+      description: '새로운 모습을 미리 체험해보세요',
+      image: 'face.jpg',
+      icon: <AutoAwesomeIcon />
+    }
+  ];
+
+  // Timeline items
+  const timelineItems = [
+    {
+      title: '이미지 업로드',
+      description: '변화를 원하는 사진을 업로드하세요'
+    },
+    {
+      title: 'AI 분석',
+      description: '인공지능이 최적의 스타일을 분석합니다'
+    },
+    {
+      title: '스타일 선택',
+      description: 'AI가 추천하는 다양한 스타일 중 선택하세요'
+    },
+    {
+      title: '결과 확인',
+      description: '새로운 모습을 확인하세요'
+    }
+  ];
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -80,53 +236,26 @@ const HairAI = () => {
       }
     });
 
-    const checkAuth = async () => {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setIsAuthenticated(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/auth/verify`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          throw new Error('Authentication failed');
-        }
-
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        localStorage.removeItem('accessToken');
-        setIsAuthenticated(false);
-      }
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
     };
 
-    checkAuth();
-    return () => unsubscribe();
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('kakaoToken');
       setIsAuthenticated(false);
       setUser(null);
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
     }
-    handleProfileMenuClose();
-  };
-
-  const handleMyPage = () => {
-    navigate('/mypage');
     handleProfileMenuClose();
   };
 
@@ -138,9 +267,15 @@ const HairAI = () => {
     setProfileAnchorEl(null);
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <Box sx={{ bgcolor: '#f8f9fa' }}>
-      {/* Modern AppBar */}
+    <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh' }}>
+      <ScrollProgressBar />
+
+      {/* AppBar */}
       <AppBar
         position="fixed"
         elevation={0}
@@ -148,8 +283,7 @@ const HairAI = () => {
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(8px)',
           borderBottom: '1px solid',
-          borderColor: 'divider',
-          zIndex: (theme) => theme.zIndex.drawer + 1
+          borderColor: 'divider'
         }}
       >
         <Toolbar sx={{ py: 1 }}>
@@ -220,7 +354,7 @@ const HairAI = () => {
                     }
                   }}
                 >
-                  <MenuItem onClick={handleMyPage}>마이페이지</MenuItem>
+                  <MenuItem onClick={() => navigate('/mypage')}>마이페이지</MenuItem>
                   <MenuItem onClick={handleLogout}>로그아웃</MenuItem>
                 </Menu>
               </>
@@ -246,13 +380,15 @@ const HairAI = () => {
             <MenuIcon />
           </IconButton>
         </Toolbar>
+
       </AppBar>
 
-      {/* Hero Section with Modernized Slider */}
-      <Box sx={{ position: 'relative', width: '100%', height: '100vh', minHeight: '600px', marginTop: '0', overflow: 'hidden' }}>
+      {/* Hero Section with Slider */}
+      <Box sx={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
+        <WaveBackground />
         <Slider {...sliderSettings}>
           {sliderContent.map((content, index) => (
-            <Box key={index} sx={{ position: 'relative', height: '100vh', minHeight: '600px' }}>
+            <Box key={index} sx={{ position: 'relative', height: '100vh' }}>
               <Box
                 component="img"
                 src={`/assets/images/${content.image}`}
@@ -264,87 +400,79 @@ const HairAI = () => {
                   objectPosition: 'center center'
                 }}
               />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: { xs: '0 5%', md: '0 10%' }, // 반응형 패딩 추가
-                  paddingTop: '64px' // AppBar 높이만큼 패딩 추가
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="h1"
-                    sx={{
-                      color: 'white',
-                      fontWeight: 700,
-                      fontSize: {
-                        xs: '2rem',    // 모바일
-                        sm: '2.5rem',  // 태블릿
-                        md: '3.5rem',  // 데스크탑
-                        lg: '4rem'     // 큰 화면
-                      },
-                      mb: 2,
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-                      wordBreak: 'keep-all' // 한글 단어 단위 줄바꿈
-                    }}
-                  >
-                    {content.title}
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: 'rgba(255,255,255,0.9)',
-                      mb: 4,
-                      maxWidth: '600px',
-                      fontSize: {
-                        xs: '1rem',
-                        sm: '1.2rem',
-                        md: '1.5rem'
-                      },
-                      wordBreak: 'keep-all' // 한글 단어 단위 줄바꿈
-                    }}
-                  >
-                    {content.subtitle}
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    endIcon={<ArrowForwardIcon />}
-                    sx={{
-                      background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                      boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-                      px: 6,
-                      py: 2,
-                      borderRadius: '30px',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 5px 8px 2px rgba(33, 203, 243, .4)',
-                      },
-                      transition: 'all 0.3s ease'
-                    }}
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        navigate('/login');
-                      }
-                    }}
-                  >
-                    Try Now
-                  </Button>
+              <Fade in timeout={1000}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 10%',
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="h1"
+                      sx={{
+                        color: 'white',
+                        fontWeight: 700,
+                        fontSize: { xs: '2.5rem', md: '4rem' },
+                        mb: 2,
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                        animation: 'fadeInUp 1s ease-out'
+                      }}
+                    >
+                      {content.title}
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        color: 'rgba(255,255,255,0.9)',
+                        mb: 4,
+                        maxWidth: '600px',
+                        animation: 'fadeInUp 1s ease-out 0.3s'
+                      }}
+                    >
+                      {content.subtitle}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{
+                        animation: 'fadeInUp 1s ease-out 0.6s',
+                        background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                        boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+                        px: 6,
+                        py: 2,
+                        borderRadius: '30px',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 5px 8px 2px rgba(33, 203, 243, .4)',
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          navigate('/login');
+                        }
+                      }}
+                    >
+                      Try Now
+                    </Button>
+                  </Box>
                 </Box>
-              </Box>
+              </Fade>
             </Box>
           ))}
         </Slider>
       </Box>
 
-      {/* Modernized Popular Styles Section */}
+      {/* Features Section */}
       <Container sx={{ py: 12 }}>
         <Typography
           variant="h3"
@@ -357,75 +485,189 @@ const HairAI = () => {
             WebkitTextFillColor: 'transparent'
           }}
         >
-          Popular Styles
+          Our Services
         </Typography>
         <Grid container spacing={4}>
-          {[
-            { title: 'AI 광고', image: 'Advertising.jpg' },
-            { title: '헤어 스타일 바꾸기', image: 'hair.jpg' },
-            { title: '얼굴 바꾸기', image: 'face.jpg' }
-          ].map((item, index) => (
-            <Grid item xs={12} md={4} key={index}>
-              <Card
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: '16px',
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: '0 12px 24px rgba(33, 150, 243, 0.2)'
-                  }
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height="280"
-                  image={`/assets/images/${item.image}`}
-                  alt={item.title}
-                  sx={{ objectFit: "cover" }}
-                />
-                <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-                  <Typography
-                    gutterBottom
-                    variant="h6"
-                    sx={{ fontWeight: 600 }}
-                  >
-                    {item.title}
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    endIcon={<ArrowForwardIcon />}
-                    sx={{
-                      mt: 2,
-                      borderRadius: '25px',
-                      px: 4,
-                      borderWidth: '2px',
-                      '&:hover': {
+          {features.map((feature, index) => (
+            <Fade in timeout={500 * (index + 1)} key={index}>
+              <Grid item xs={12} md={4}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 12px 24px rgba(33, 150, 243, 0.2)'
+                    }
+                  }}
+                >
+                  <CardMedia
+                    component="img"
+                    height="280"
+                    image={`/assets/images/${feature.image}`}
+                    alt={feature.title}
+                    sx={{ objectFit: "cover" }}
+                  />
+                  <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
+                    <Box sx={{ mb: 2 }}>
+                      {feature.icon}
+                    </Box>
+                    <Typography
+                      gutterBottom
+                      variant="h5"
+                      sx={{ fontWeight: 600 }}
+                    >
+                      {feature.title}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      sx={{ mb: 3 }}
+                    >
+                      {feature.description}
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{
+                        mt: 2,
+                        borderRadius: '25px',
+                        px: 4,
                         borderWidth: '2px',
-                        background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                        color: 'white',
-                        borderColor: 'transparent'
-                      }
-                    }}
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        navigate('/login');
-                      }
-                    }}
-                  >
-                    TRY THIS STYLE
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
+                        '&:hover': {
+                          borderWidth: '2px',
+                          background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                          color: 'white',
+                          borderColor: 'transparent'
+                        }
+                      }}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          navigate('/login');
+                        }
+                      }}
+                    >
+                      Try Now
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Fade>
           ))}
         </Grid>
       </Container>
+
+      {/* How It Works Section */}
+      <Box sx={{ bgcolor: 'white', py: 12 }}>
+        <Container>
+          <Typography
+            variant="h3"
+            align="center"
+            sx={{
+              mb: 8,
+              fontWeight: 700,
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}
+          >
+            How It Works
+          </Typography>
+          <Timeline position="alternate">
+            {timelineItems.map((item, index) => (
+              <TimelineItem key={index}>
+                <TimelineSeparator>
+                  <TimelineDot sx={{
+                    bgcolor: '#2196F3',
+                    boxShadow: '0 0 0 4px rgba(33, 150, 243, 0.2)'
+                  }}>
+                    <AutoAwesomeIcon />
+                  </TimelineDot>
+                  {index < timelineItems.length - 1 && <TimelineConnector />}
+                </TimelineSeparator>
+                <TimelineContent>
+                  <Paper
+                    elevation={3}
+                    sx={{
+                      p: 3,
+                      bgcolor: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 2,
+                      transition: 'transform 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-5px)'
+                      }
+                    }}
+                  >
+                    <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
+                      {item.title}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {item.description}
+                    </Typography>
+                  </Paper>
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+          </Timeline>
+        </Container>
+      </Box>
+
+      {/* Reviews Section */}
+      <Container sx={{ py: 12 }}>
+        <Typography
+          variant="h3"
+          align="center"
+          sx={{
+            mb: 8,
+            fontWeight: 700,
+            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}
+        >
+          What Our Users Say
+        </Typography>
+        <Suspense fallback={<SkeletonLoader />}>
+          <ReviewCarousel />
+        </Suspense>
+      </Container>
+
+      {/* Floating Action Button */}
+      <Zoom in={showScrollTop}>
+        <Box
+          onClick={scrollToTop}
+          sx={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+            backgroundColor: '#2196F3',
+            color: 'white',
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 3px 5px rgba(0,0,0,0.2)',
+            transition: 'all 0.3s ease',
+            zIndex: 1000,
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 5px 8px rgba(0,0,0,0.3)'
+            }
+          }}
+        >
+          <ArrowUpwardIcon />
+        </Box>
+      </Zoom>
 
       {/* Mobile Menu */}
       <Menu
@@ -453,6 +695,53 @@ const HairAI = () => {
           </MenuItem>
         )}
       </Menu>
+
+      {/* CSS Animations */}
+      <style>
+        {`
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .custom-dots {
+            position: absolute;
+            bottom: 20px;
+            display: flex !important;
+            justify-content: center;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+          }
+
+          .custom-dots li {
+            margin: 0 4px;
+          }
+
+          .custom-dots li button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.3s ease;
+          }
+
+          .custom-dots li.slick-active button {
+            background: #2196F3;
+            transform: scale(1.2);
+          }
+        `}
+      </style>
     </Box>
   );
 };
