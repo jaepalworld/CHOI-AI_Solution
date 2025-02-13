@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Container, 
-  Paper, 
-  Typography, 
-  TextField, 
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  TextField,
   Button,
   Grid,
   Divider,
@@ -17,12 +17,11 @@ import KakaoLogin from 'react-kakao-login';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
-
 const Login = () => {
   const navigate = useNavigate();
   const kakaoClientId = '026cb31474c35d7d573fd513fa87b9f6';
   const googleClientId = 'YOUR_GOOGLE_CLIENT_ID';
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -40,7 +39,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       setError('이메일과 비밀번호를 입력해주세요.');
       return;
@@ -49,16 +48,14 @@ const Login = () => {
     try {
       setLoading(true);
       setError('');
-      
-      // Firebase Authentication으로 로그인
+
       await signInWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
 
-      // 로그인 성공 시 hairai 페이지로 이동
-      navigate('/hairai');
+      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -73,9 +70,9 @@ const Login = () => {
 
   const kakaoOnSuccess = (data) => {
     console.log('Kakao login success:', data);
-    navigate('/hairai');
+    navigate('/');
   };
-  
+
   const kakaoOnFailure = (err) => {
     console.error('Kakao login error:', err);
   };
@@ -83,9 +80,10 @@ const Login = () => {
   const googleOnSuccess = (credentialResponse) => {
     const decoded = jwtDecode(credentialResponse.credential);
     console.log('Google login success:', decoded);
-    navigate('/hairai');
+    navigate('/');
   };
 
+  // Rest of the component remains the same
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <Box sx={{
@@ -171,7 +169,7 @@ const Login = () => {
                       fullWidth
                       variant="outlined"
                       onClick={onClick}
-                      sx={{ 
+                      sx={{
                         py: 1.5,
                         bgcolor: '#FEE500',
                         color: '#000000',
@@ -202,8 +200,8 @@ const Login = () => {
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Typography color="text.secondary">
                 Don't have an account?{' '}
-                <Button 
-                  color="primary" 
+                <Button
+                  color="primary"
                   sx={{ textTransform: 'none' }}
                   onClick={() => navigate('/signup')}
                 >

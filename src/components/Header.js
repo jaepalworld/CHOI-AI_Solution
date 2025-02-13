@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Button, 
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
   Box,
   Avatar,
   Menu,
@@ -30,7 +30,7 @@ const Header = ({ user }) => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate('/login');
+      navigate('/hairai');  // 로그아웃시 hairai 페이지로 이동
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -44,20 +44,20 @@ const Header = ({ user }) => {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography 
-          variant="h6" 
-          component="div" 
+        <Typography
+          variant="h6"
+          component="div"
           sx={{ flexGrow: 1, cursor: 'pointer' }}
           onClick={() => navigate('/')}
         >
           HairAI
         </Typography>
-        
+
         {user ? (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton onClick={handleMenu}>
-              <Avatar 
-                src={user.photoURL} 
+              <Avatar
+                src={user.photoURL}
                 alt={user.displayName || user.email}
               >
                 {(user.displayName || user.email || '?')[0].toUpperCase()}
