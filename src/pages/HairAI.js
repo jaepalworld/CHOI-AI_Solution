@@ -15,7 +15,7 @@ import {
   Menu,
   MenuItem,
   IconButton,
-  useTheme,
+  // useTheme,
   // alpha,
   Fade,
   Zoom,
@@ -24,7 +24,7 @@ import {
   // Rating
 } from '@mui/material';
 
-// Timeline components from @mui/lab
+// @mui/lab에서 제공하는 타임라인 컴포넌트
 import {
   Timeline,
   TimelineItem,
@@ -34,7 +34,7 @@ import {
   TimelineDot
 } from '@mui/lab';
 
-// Icons
+// 아이콘
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -45,18 +45,16 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { auth } from '../firebase/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
-// Slider
+// 슬라이더
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-
-
-// Lazy loaded components
+// 지연 로딩된 컴포넌트
 const ReviewCarousel = lazy(() => import('../components/ReviewCarousel'));
 // const FeatureCard = lazy(() => import('../components/FeatureCard'));
 
-// Wave Background Component
+// 웨이브 배경 컴포넌트
 const WaveBackground = () => (
   <Box
     sx={{
@@ -97,7 +95,7 @@ const WaveBackground = () => (
   </Box>
 );
 
-// Scroll Progress Bar Component
+// 스크롤 진행 바 컴포넌트
 const ScrollProgressBar = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -136,13 +134,14 @@ const ScrollProgressBar = () => {
   );
 };
 
-// Loading Skeleton
+// 로딩 스켈레톤
 const SkeletonLoader = () => (
   <Box sx={{ padding: 2 }}>
     <CircularProgress />
   </Box>
 );
 
+// HairAI 컴포넌트
 const HairAI = () => {
   const navigate = useNavigate();
   // const theme = useTheme();
@@ -183,7 +182,7 @@ const HairAI = () => {
     }
   ];
 
-  // Features data
+  // 기능 데이터
   const features = [
     {
       title: 'AI 광고',
@@ -205,7 +204,7 @@ const HairAI = () => {
     }
   ];
 
-  // Timeline items
+  // 타임라인 항목
   const timelineItems = [
     {
       title: '이미지 업로드',
@@ -247,6 +246,7 @@ const HairAI = () => {
     };
   }, []);
 
+  // 로그아웃 핸들러
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -259,14 +259,17 @@ const HairAI = () => {
     handleProfileMenuClose();
   };
 
+  // 프로필 메뉴 열기 핸들러
   const handleProfileMenuOpen = (event) => {
     setProfileAnchorEl(event.currentTarget);
   };
 
+  // 프로필 메뉴 닫기 핸들러
   const handleProfileMenuClose = () => {
     setProfileAnchorEl(null);
   };
 
+  // 맨 위로 스크롤
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -300,9 +303,20 @@ const HairAI = () => {
             }}
             onClick={() => navigate('/')}
           >
-            HairAI Style
+            Drawing-Studio
           </Typography>
+
           <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 3 }}>
+            <Button
+              sx={{
+                color: 'text.primary',
+                fontWeight: 500,
+                '&:hover': { color: 'primary.main' }
+              }}
+              onClick={() => navigate('/service/chat')}
+            >
+              고객센터 상담
+            </Button>
             <Button
               sx={{
                 color: 'text.primary',
@@ -383,7 +397,7 @@ const HairAI = () => {
 
       </AppBar>
 
-      {/* Hero Section with Slider */}
+      {/* 슬라이더가 있는 히어로 섹션 */}
       <Box sx={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
         <WaveBackground />
         <Slider {...sliderSettings}>
@@ -458,6 +472,7 @@ const HairAI = () => {
                       }}
                       onClick={() => {
                         if (!isAuthenticated) {
+                          alert('로그인을 하지 않았다면 로그인 해주세요.');
                           navigate('/login');
                         }
                       }}
@@ -472,7 +487,7 @@ const HairAI = () => {
         </Slider>
       </Box>
 
-      {/* Features Section */}
+      {/* 기능 섹션 */}
       <Container sx={{ py: 12 }}>
         <Typography
           variant="h3"
@@ -549,7 +564,17 @@ const HairAI = () => {
                       }}
                       onClick={() => {
                         if (!isAuthenticated) {
+                          alert('로그인을 해주세요.');
                           navigate('/login');
+                        } else {
+                          // 각 서비스 별 경로
+                          if (feature.title === '얼굴 바꾸기') {
+                            navigate('/face/style');
+                          } else if (feature.title === '헤어 스타일 바꾸기') {
+                            navigate('/hair/style');
+                          } else if (feature.title === 'AI 광고') {
+                            navigate('/advertising');
+                          }
                         }
                       }}
                     >
@@ -563,7 +588,7 @@ const HairAI = () => {
         </Grid>
       </Container>
 
-      {/* How It Works Section */}
+      {/* 작동 방식 섹션 */}
       <Box sx={{ bgcolor: 'white', py: 12 }}>
         <Container>
           <Typography
@@ -619,7 +644,7 @@ const HairAI = () => {
         </Container>
       </Box>
 
-      {/* Reviews Section */}
+      {/* 리뷰 섹션 */}
       <Container sx={{ py: 12 }}>
         <Typography
           variant="h3"
@@ -639,7 +664,7 @@ const HairAI = () => {
         </Suspense>
       </Container>
 
-      {/* Floating Action Button */}
+      {/* 플로팅 액션 버튼 */}
       <Zoom in={showScrollTop}>
         <Box
           onClick={scrollToTop}
@@ -669,7 +694,7 @@ const HairAI = () => {
         </Box>
       </Zoom>
 
-      {/* Mobile Menu */}
+      {/* 모바일 관련 */}
       <Menu
         anchorEl={null}
         open={mobileMenuOpen}
@@ -684,6 +709,7 @@ const HairAI = () => {
           }
         }}
       >
+        <MenuItem onClick={() => { navigate('/service/chat'); setMobileMenuOpen(false); }}>고객센터 상담</MenuItem>
         <MenuItem onClick={() => setMobileMenuOpen(false)}>Try AI</MenuItem>
         <MenuItem onClick={() => setMobileMenuOpen(false)}>Styles</MenuItem>
         {!isAuthenticated && (
@@ -696,7 +722,7 @@ const HairAI = () => {
         )}
       </Menu>
 
-      {/* CSS Animations */}
+      {/* CSS 애니메이션 */}
       <style>
         {`
           @keyframes fadeInUp {

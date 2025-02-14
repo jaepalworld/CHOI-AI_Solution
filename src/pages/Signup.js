@@ -16,7 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import KakaoLogin from 'react-kakao-login';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
@@ -73,8 +73,24 @@ const ImageMarquee = ({ images, direction }) => {
 
 const Signup = () => {
   const navigate = useNavigate();
-  const kakaoClientId = '026cb31474c35d7d573fd513fa87b9f6';
+  const kakaoClientId = process.env.REACT_APP_KAKAO_CLIENT_ID;
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  const kakaoOnSuccess = async (data) => {
+    console.log('Kakao signup success:', data);
+    navigate('/');
+  };
+
+  const kakaoOnFailure = (err) => {
+    console.error('Kakao signup error:', err);
+    setError('카카오 로그인 중 오류가 발생했습니다.');
+  };
+
+  // Google 로그인 관련 함수
+  const googleOnSuccess = (credentialResponse) => {
+    const decoded = jwtDecode(credentialResponse.credential);
+    console.log('Google signup success:', decoded);
+    navigate('/');
+  };
 
   const [formData, setFormData] = useState({
     email: '',
@@ -153,16 +169,18 @@ const Signup = () => {
         const userData = {
           name: formData.name,
           email: formData.email,
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString()
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp()
         };
 
         await setDoc(doc(db, 'users', userCredential.user.uid), userData);
         navigate('/login');
       } catch (firestoreError) {
+        console.error('Firestore error:', firestoreError);
         setError('사용자 정보 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
       }
     } catch (error) {
+      console.error('Signup error:', error);
       switch (error.code) {
         case 'auth/email-already-in-use':
           setError('이미 사용 중인 이메일입니다.');
@@ -181,51 +199,16 @@ const Signup = () => {
     }
   };
 
-  const kakaoOnSuccess = async (data) => {
-    console.log('Kakao signup success:', data);
-    navigate('/');
-  };
-
-  const kakaoOnFailure = (err) => {
-    console.error('Kakao signup error:', err);
-    setError('카카오 로그인 중 오류가 발생했습니다.');
-  };
-
-  const googleOnSuccess = (credentialResponse) => {
-    const decoded = jwtDecode(credentialResponse.credential);
-    console.log('Google signup success:', decoded);
-    navigate('/');
-  };
-
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <Box sx={{
         display: 'flex',
         minHeight: '100vh',
-        background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)'
+        background: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 50%, #e5e7eb 100%)'
       }}>
-        {/* Left Marquee */}
         <ImageMarquee images={leftImages} direction="up" />
 
-        {/* Main Content */}
         <Container maxWidth="sm" sx={{ py: 8, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <Box sx={{ mb: 4, textAlign: 'center' }}>
-            <Typography
-              variant="h4"
-              component="div"
-              sx={{
-                cursor: 'pointer',
-                fontWeight: 600,
-                color: 'white',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
-                mb: 2
-              }}
-              onClick={() => navigate('/')}
-            >
-              {/* HAIR AI */}
-            </Typography>
-          </Box>
-
           <Paper elevation={24} sx={{
             padding: { xs: 3, md: 4 },
             backdropFilter: 'blur(10px)',
@@ -441,26 +424,10 @@ const Signup = () => {
           </Paper>
         </Container>
 
-        {/* Right Marquee */}
         <ImageMarquee images={rightImages} direction="down" />
       </Box>
     </GoogleOAuthProvider>
   );
 };
-
-const styles = `
-@keyframes slide {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-50%);
-  }
-}
-`;
-
-const styleSheet = document.createElement('style');
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
 
 export default Signup;

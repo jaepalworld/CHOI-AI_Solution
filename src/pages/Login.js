@@ -148,7 +148,7 @@ const Login = () => {
       <Box sx={{
         display: 'flex',
         minHeight: '100vh',
-        background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)'
+        background: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 50%, #e5e7eb 100%)'
       }}>
         {/* Left Marquee */}
         <ImageMarquee images={leftImages} direction="up" />
