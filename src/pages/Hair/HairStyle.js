@@ -19,9 +19,8 @@ import {
 import { styled } from '@mui/material/styles';
 import { storage } from '../../firebase/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import Cropper from 'react-easy-crop';
 
-// Enhanced styled components
+// 스타일이 적용된 컴포넌트
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
     height: '100%',
@@ -69,38 +68,33 @@ const StyledButton = styled(Button)(({ theme }) => ({
     },
 }));
 
-// Hair style options based on gender
+// 성별에 따른 헤어스타일 옵션
 const hairStyleOptions = {
     male: {
-        short: ['Crew Cut', 'Fade', 'Undercut', 'Pompadour'],
-        medium: ['Quiff', 'Slick Back', 'Textured Crop', 'Side Part'],
-        long: ['Man Bun', 'Shoulder Length', 'Layered Cut']
+        short: ['크루 컷', '페이드', '언더컷', '포마드'],
+        medium: ['퀴프', '슬릭백', '텍스처드 크롭', '사이드파트'],
+        long: ['맨 번', '어깨 길이', '레이어드 컷']
     },
     female: {
-        short: ['Pixie Cut', 'Bob Cut', 'Asymmetric Cut', 'Layered Short'],
-        medium: ['Lob Cut', 'Layered Medium', 'Shoulder Length Waves'],
-        long: ['Long Layers', 'Beach Waves', 'Straight Long', 'V-Cut']
+        short: ['픽시 컷', '보브 컷', '비대칭 컷', '레이어드 숏'],
+        medium: ['롭 컷', '레이어드 미디엄', '어깨 길이 웨이브'],
+        long: ['롱 레이어', '비치 웨이브', '스트레이트 롱', 'V컷']
     }
 };
 
 const HairStyle = () => {
-    // Enhanced state management
+    // 상태 관리
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedImageTwo, setSelectedImageTwo] = useState(null);
     const [resultImage, setResultImage] = useState('');
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [brightness, setBrightness] = useState(1);
-    const [contrast, setContrast] = useState(1);
     const [selectedGender, setSelectedGender] = useState('');
     const [selectedLength, setSelectedLength] = useState('');
     const [selectedStyle, setSelectedStyle] = useState('');
     const [resultHistory, setResultHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [croppedImageUrl, setCroppedImageUrl] = useState(null);
 
-    // Load history from localStorage
+    // localStorage에서 기록 불러오기
     useEffect(() => {
         try {
             const storedHistory = localStorage.getItem('resultHistory');
@@ -108,33 +102,33 @@ const HairStyle = () => {
                 setResultHistory(JSON.parse(storedHistory));
             }
         } catch (error) {
-            console.error('Error loading history:', error);
+            console.error('기록 불러오기 오류:', error);
         }
     }, []);
 
-    // Enhanced image upload handler
+    // 이미지 업로드 핸들러
     const handleImageUpload = useCallback((event, setImage) => {
         try {
             const file = event.target.files[0];
             if (file) {
                 if (file.size > 10 * 1024 * 1024) {
-                    setError('File size should be less than 10MB');
+                    setError('파일 크기는 10MB 미만이어야 합니다');
                     return;
                 }
                 if (!file.type.startsWith('image/')) {
-                    setError('Please upload an image file');
+                    setError('이미지 파일을 업로드해주세요');
                     return;
                 }
                 setImage(file);
                 setError('');
             }
         } catch (error) {
-            console.error('Error uploading image:', error);
-            setError('Error uploading image');
+            console.error('이미지 업로드 오류:', error);
+            setError('이미지 업로드 중 오류가 발생했습니다');
         }
     }, []);
 
-    // Enhanced style selection handlers
+    // 스타일 선택 핸들러
     const handleGenderChange = useCallback((event) => {
         setSelectedGender(event.target.value);
         setSelectedLength('');
@@ -150,69 +144,27 @@ const HairStyle = () => {
         setSelectedStyle(event.target.value);
     }, []);
 
-    // Image cropping handler
-    const onCropComplete = useCallback(async (croppedArea, croppedAreaPixels) => {
-        try {
-            if (!selectedImage) return;
-
-            const image = new Image();
-            image.src = URL.createObjectURL(selectedImage);
-
-            await new Promise((resolve) => {
-                image.onload = resolve;
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            canvas.width = croppedAreaPixels.width;
-            canvas.height = croppedAreaPixels.height;
-
-            ctx.drawImage(
-                image,
-                croppedAreaPixels.x,
-                croppedAreaPixels.y,
-                croppedAreaPixels.width,
-                croppedAreaPixels.height,
-                0,
-                0,
-                croppedAreaPixels.width,
-                croppedAreaPixels.height
-            );
-
-            ctx.filter = `brightness(${brightness}) contrast(${contrast})`;
-
-            const croppedImageUrl = canvas.toDataURL('image/jpeg');
-            setCroppedImageUrl(croppedImageUrl);
-
-        } catch (error) {
-            console.error('Error cropping image:', error);
-            setError('Error cropping image');
-        }
-    }, [selectedImage, brightness, contrast]);
-
-    // Enhanced upload handler
+    // 업로드 핸들러
     const handleUploadClick = async () => {
         try {
             setLoading(true);
             setError('');
 
             if (!selectedImage || !selectedImageTwo) {
-                setError('Please select both images');
+                setError('두 이미지를 모두 선택해주세요');
                 return;
             }
 
             if (!selectedGender || !selectedLength || !selectedStyle) {
-                setError('Please complete style selection');
+                setError('스타일 선택을 완료해주세요');
                 return;
             }
 
-            const croppedImageBlob = await fetch(croppedImageUrl).then(r => r.blob());
-            const storageRefOne = ref(storage, `images/${Date.now()}-cropped.jpg`);
+            const storageRefOne = ref(storage, `images/${Date.now()}-original.jpg`);
             const storageRefTwo = ref(storage, `images/${Date.now()}-reference.jpg`);
 
             await Promise.all([
-                uploadBytes(storageRefOne, croppedImageBlob),
+                uploadBytes(storageRefOne, selectedImage),
                 uploadBytes(storageRefTwo, selectedImageTwo)
             ]);
 
@@ -221,7 +173,7 @@ const HairStyle = () => {
                 getDownloadURL(storageRefTwo)
             ]);
 
-            // TODO: AI processing logic here
+            // AI 처리 로직 추가 예정
             setResultImage(downloadUrlOne);
 
             const updatedHistory = [...resultHistory, downloadUrlOne];
@@ -229,8 +181,8 @@ const HairStyle = () => {
             localStorage.setItem('resultHistory', JSON.stringify(updatedHistory));
 
         } catch (error) {
-            console.error('Error processing images:', error);
-            setError('Error processing images');
+            console.error('이미지 처리 오류:', error);
+            setError('이미지 처리 중 오류가 발생했습니다');
         } finally {
             setLoading(false);
         }
@@ -248,51 +200,27 @@ const HairStyle = () => {
                         HAIR AI
                     </Typography>
                     <Typography variant="h6" align="center" sx={{ color: '#ffffff', opacity: 0.9 }}>
-                        Transform your hairstyle with AI
+                        AI로 당신의 헤어스타일을 변화시켜보세요
                     </Typography>
                 </GradientHeader>
 
                 <Grid container spacing={4}>
-                    {/* Left Panel: Source Image and Crop */}
+                    {/* 왼쪽 패널: 소스 이미지 */}
                     <Grid item xs={12} md={6}>
                         <Grid container spacing={3}>
                             <Grid item xs={12}>
                                 <StyledPaper variant="outlined">
                                     <ImageContainer>
                                         {selectedImage ? (
-                                            <>
-                                                <Cropper
-                                                    image={URL.createObjectURL(selectedImage)}
-                                                    crop={crop}
-                                                    zoom={zoom}
-                                                    aspect={1}
-                                                    onCropChange={setCrop}
-                                                    onCropComplete={onCropComplete}
-                                                    onZoomChange={setZoom}
-                                                />
-                                                <Box sx={{ mt: 2 }}>
-                                                    <Typography variant="subtitle1" gutterBottom>
-                                                        Brightness
-                                                    </Typography>
-                                                    <Slider
-                                                        value={brightness}
-                                                        min={0.5}
-                                                        max={1.5}
-                                                        step={0.1}
-                                                        onChange={(e, value) => setBrightness(value)}
-                                                    />
-                                                    <Typography variant="subtitle1" gutterBottom>
-                                                        Contrast
-                                                    </Typography>
-                                                    <Slider
-                                                        value={contrast}
-                                                        min={0.5}
-                                                        max={1.5}
-                                                        step={0.1}
-                                                        onChange={(e, value) => setContrast(value)}
-                                                    />
-                                                </Box>
-                                            </>
+                                            <img
+                                                src={URL.createObjectURL(selectedImage)}
+                                                alt="선택된 이미지"
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'contain'
+                                                }}
+                                            />
                                         ) : (
                                             <Box sx={{
                                                 display: 'flex',
@@ -303,7 +231,7 @@ const HairStyle = () => {
                                                 borderRadius: '12px'
                                             }}>
                                                 <Typography variant="h6" color="text.secondary">
-                                                    Upload your photo
+                                                    사진을 업로드해주세요
                                                 </Typography>
                                             </Box>
                                         )}
@@ -318,59 +246,59 @@ const HairStyle = () => {
                                         />
                                         <label htmlFor="source-image-upload">
                                             <StyledButton variant="contained" component="span">
-                                                Upload Photo
+                                                얼굴 사진을 올려주세요
                                             </StyledButton>
                                         </label>
                                     </Box>
                                 </StyledPaper>
                             </Grid>
 
-                            {/* Style Selection Section */}
+                            {/* 스타일 선택 섹션 */}
                             <Grid item xs={12}>
                                 <StyledPaper variant="outlined">
                                     <Box sx={{ mb: 3 }}>
                                         <Typography variant="h6" gutterBottom>
-                                            Style Selection
+                                            스타일 선택
                                         </Typography>
 
                                         <StyledFormControl fullWidth>
-                                            <InputLabel>Gender</InputLabel>
+                                            <InputLabel>성별</InputLabel>
                                             <Select
                                                 value={selectedGender}
                                                 onChange={handleGenderChange}
-                                                label="Gender"
+                                                label="성별"
                                             >
-                                                <MenuItem value="">Select gender</MenuItem>
-                                                <MenuItem value="male">Male</MenuItem>
-                                                <MenuItem value="female">Female</MenuItem>
+                                                <MenuItem value="">성별 선택</MenuItem>
+                                                <MenuItem value="male">남성</MenuItem>
+                                                <MenuItem value="female">여성</MenuItem>
                                             </Select>
                                         </StyledFormControl>
 
                                         <Collapse in={!!selectedGender}>
                                             <StyledFormControl fullWidth>
-                                                <InputLabel>Hair Length</InputLabel>
+                                                <InputLabel>머리 길이</InputLabel>
                                                 <Select
                                                     value={selectedLength}
                                                     onChange={handleLengthChange}
-                                                    label="Hair Length"
+                                                    label="머리 길이"
                                                 >
-                                                    <MenuItem value="">Select length</MenuItem>
-                                                    <MenuItem value="short">Short</MenuItem>
-                                                    <MenuItem value="medium">Medium</MenuItem>
-                                                    <MenuItem value="long">Long</MenuItem>
+                                                    <MenuItem value="">길이 선택</MenuItem>
+                                                    <MenuItem value="short">짧은 머리</MenuItem>
+                                                    <MenuItem value="medium">중간 머리</MenuItem>
+                                                    <MenuItem value="long">긴 머리</MenuItem>
                                                 </Select>
                                             </StyledFormControl>
                                         </Collapse>
 
                                         <Collapse in={!!selectedLength}>
                                             <StyledFormControl fullWidth>
-                                                <InputLabel>Hair Style</InputLabel>
+                                                <InputLabel>헤어스타일</InputLabel>
                                                 <Select
                                                     value={selectedStyle}
                                                     onChange={handleStyleChange}
-                                                    label="Hair Style"
+                                                    label="헤어스타일"
                                                 >
-                                                    <MenuItem value="">Select style</MenuItem>
+                                                    <MenuItem value="">스타일 선택</MenuItem>
                                                     {selectedGender && selectedLength &&
                                                         hairStyleOptions[selectedGender][selectedLength].map((style) => (
                                                             <MenuItem key={style} value={style}>
@@ -383,16 +311,16 @@ const HairStyle = () => {
                                         </Collapse>
                                     </Box>
 
-                                    {/* Reference Image Upload */}
-                                    <Box sx={{ height: '300px', display: 'flex', flexDirection: 'column' }}>
+                                    {/* 참조 이미지 업로드 */}
+                                    <Box sx={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
                                         {selectedImageTwo ? (
                                             <img
                                                 src={URL.createObjectURL(selectedImageTwo)}
-                                                alt="Reference"
+                                                alt="참조"
                                                 style={{
                                                     width: '100%',
                                                     height: '100%',
-                                                    objectFit: 'cover',
+                                                    objectFit: 'contain',
                                                     borderRadius: '8px'
                                                 }}
                                             />
@@ -406,7 +334,7 @@ const HairStyle = () => {
                                                 borderRadius: '12px'
                                             }}>
                                                 <Typography variant="h6" color="text.secondary">
-                                                    Upload reference hairstyle
+                                                    참조할 헤어스타일 이미지를 업로드해주세요
                                                 </Typography>
                                             </Box>
                                         )}
@@ -421,7 +349,7 @@ const HairStyle = () => {
                                         />
                                         <label htmlFor="reference-image-upload">
                                             <StyledButton variant="contained" component="span">
-                                                Upload Reference
+                                                스타일 사진을 올려주세요
                                             </StyledButton>
                                         </label>
                                     </Box>
@@ -430,7 +358,7 @@ const HairStyle = () => {
                         </Grid>
                     </Grid>
 
-                    {/* Right Panel: Result Image */}
+                    {/* 오른쪽 패널: 결과 이미지 */}
                     <Grid item xs={12} md={6}>
                         <StyledPaper variant="outlined">
                             <Box sx={{
@@ -445,13 +373,13 @@ const HairStyle = () => {
                                     <Box sx={{ textAlign: 'center' }}>
                                         <CircularProgress size={60} />
                                         <Typography variant="h6" sx={{ mt: 2 }}>
-                                            Processing your image...
+                                            이미지 처리 중...
                                         </Typography>
                                     </Box>
                                 ) : resultImage ? (
                                     <img
                                         src={resultImage}
-                                        alt="Result"
+                                        alt="결과"
                                         style={{
                                             width: '100%',
                                             height: 'auto',
@@ -470,10 +398,10 @@ const HairStyle = () => {
                                         width: '100%'
                                     }}>
                                         <Typography variant="h6" color="text.secondary">
-                                            Your transformed hairstyle will appear here
+                                            변환된 헤어스타일이 여기에 표시됩니다
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                            Upload your photo and select a style to begin
+                                            사진을 업로드하고 스타일을 선택해주세요
                                         </Typography>
                                     </Box>
                                 )}
@@ -482,7 +410,7 @@ const HairStyle = () => {
                     </Grid>
                 </Grid>
 
-                {/* Transform Button */}
+                {/* 변환 버튼 */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                     <StyledButton
                         variant="contained"
@@ -496,15 +424,15 @@ const HairStyle = () => {
                                 'linear-gradient(135deg, #6B73FF 0%, #000DFF 100%)',
                         }}
                     >
-                        {loading ? 'Processing...' : 'Transform Hair'}
+                        {loading ? '처리 중...' : '헤어스타일 변환하기'}
                     </StyledButton>
                 </Box>
 
-                {/* History Section */}
+                {/* 히스토리 섹션 */}
                 {resultHistory.length > 0 && (
                     <Box sx={{ mt: 6 }}>
                         <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-                            Your Style History
+                            스타일 히스토리
                         </Typography>
                         <Grid container spacing={2}>
                             {resultHistory.map((image, index) => (
@@ -520,14 +448,14 @@ const HairStyle = () => {
                                     >
                                         <img
                                             src={image}
-                                            alt={`Result ${index + 1}`}
+                                            alt={`결과 ${index + 1}`}
                                             style={{
                                                 position: 'absolute',
                                                 top: 0,
                                                 left: 0,
                                                 width: '100%',
                                                 height: '100%',
-                                                objectFit: 'cover',
+                                                objectFit: 'contain',
                                             }}
                                         />
                                     </Box>
@@ -537,7 +465,7 @@ const HairStyle = () => {
                     </Box>
                 )}
 
-                {/* Error Message */}
+                {/* 에러 메시지 */}
                 <Snackbar
                     open={!!error}
                     autoHideDuration={6000}

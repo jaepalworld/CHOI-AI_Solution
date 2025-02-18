@@ -255,6 +255,8 @@ const HairAI = () => {
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
+      // 에러 메시지 표시
+      alert('로그아웃 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
     handleProfileMenuClose();
   };
