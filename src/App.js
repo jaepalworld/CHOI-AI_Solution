@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { auth } from './firebase/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import Home from './pages/Home';
+// import Home from './pages/Home';
 import HairAI from './pages/HairAI';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -12,6 +12,7 @@ import MyPage from './pages/MyPage';
 import HairStyle from './pages/Hair/HairStyle';
 import FaceStyle from './pages/Face/FaceStyle';
 import ServiceChat from './pages/Service/ServiceChat';
+import AIAdvertising from './pages/Advertising/AI-advertising';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -41,6 +42,7 @@ function App() {
         <Route path="/hair/style" element={<HairStyle />} />
         <Route path="/face/style" element={<FaceStyle />} />
         <Route path="/service/chat" element={<ServiceChat />} />
+        <Route path="/advertising" element={<AIAdvertising />} />
       </Routes>
     </BrowserRouter>
   );
