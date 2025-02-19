@@ -1,5 +1,4 @@
 # 💇‍♀️ 헤어디자이너의 AI 혁명: Choi-Project 🤖
-
 ![AI 헤어 트랜스포메이션](https://raw.githubusercontent.com/jaepalworld/minichoi-project/main/main1.png)
 
 ## 프로젝트 배경
@@ -32,9 +31,6 @@
 4. **AI 헤어 스타일 변환**
    - 전문 헤어디자이너의 노하우를 AI 기술과 결합
 5. **AI 얼굴 변환**
-
-## AI 기술의 시각적 혁신
-![AI 기술 시각화](https://raw.githubusercontent.com/your-username/choi-project/main/src/assets/ai-transformation.gif)
 
 ## 프로젝트 모토
 *기술과 예술의 융합, 헤어 디자인의 새로운 미래*
