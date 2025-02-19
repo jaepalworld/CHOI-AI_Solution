@@ -23,7 +23,6 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { auth, db } from '../../firebase/firebase';
 import {
@@ -66,8 +65,8 @@ const ServiceChat = () => {
     const [adminOnline, setAdminOnline] = useState(false);
     const [exitDialogOpen, setExitDialogOpen] = useState(false);
     const messagesEndRef = useRef(null);
-
-
+    const [ws, setWs] = useState(null);
+    const [isAiTyping, setIsAiTyping] = useState(false);
 
     // 메시지 목록 자동 스크롤
     const scrollToBottom = () => {
@@ -78,13 +77,48 @@ const ServiceChat = () => {
         scrollToBottom();
     }, [messages]);
 
+    // WebSocket 연결 설정
+    useEffect(() => {
+        if (user) {  // 사용자가 로그인했을 때만 연결
+            const websocket = new WebSocket('ws://localhost:8000/ws');
+
+            websocket.onopen = () => {
+                console.log('WebSocket Connected');
+            };
+
+            websocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                setMessages(prev => [...prev, {
+                    id: Date.now(),
+                    ...data,
+                    timestamp: new Date()
+                }]);
+                if (data.type === 'agent' && data.tabType === 'ai') {
+                    setIsAiTyping(false);
+                }
+            };
+
+            websocket.onerror = (error) => {
+                console.error('WebSocket Error:', error);
+            };
+
+            websocket.onclose = () => {
+                console.log('WebSocket Disconnected');
+            };
+
+            setWs(websocket);
+
+            return () => {
+                websocket.close();
+            };
+        }
+    }, [user]);
+
     // Firebase Auth 상태 감지
     useEffect(() => {
-
         const unsubscribe = auth.onAuthStateChanged((currentUser) => {
             setUser(currentUser);
             if (currentUser) {
-                // 채팅 메시지 구독 설정
                 const chatCollection = activeTab === 0 ? 'aiChats' : 'personalChats';
                 const q = query(
                     collection(db, chatCollection),
@@ -100,7 +134,6 @@ const ServiceChat = () => {
                     setMessages(newMessages);
                 });
 
-                // 관리자 온라인 상태 체크 (1대1 채팅에서만)
                 if (activeTab === 1) {
                     checkAdminStatus();
                 }
@@ -129,33 +162,24 @@ const ServiceChat = () => {
     // 메시지 전송 처리
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim() || !user) return;
+        if (!newMessage.trim() || !user || !ws) return;
 
         try {
             setLoading(true);
-            const chatCollection = activeTab === 0 ? 'aiChats' : 'personalChats';
-            await addDoc(collection(db, chatCollection), {
+
+            if (activeTab === 0) {
+                setIsAiTyping(true);
+            }
+            const messageData = {
                 text: newMessage,
                 userId: user.uid,
                 userName: user.displayName || '사용자',
                 userPhoto: user.photoURL,
-                timestamp: serverTimestamp(),
-                type: 'user'
-            });
-
-            // AI 응답 시뮬레이션 (실제로는 AI API 호출)
-            if (activeTab === 0) {
-                setTimeout(async () => {
-                    await addDoc(collection(db, 'aiChats'), {
-                        text: '죄송합니다. 현재 AI 응답 기능을 개발 중입니다. 빠른 시일 내에 서비스하도록 하겠습니다.',
-                        userId: user.uid,
-                        userName: 'AI 상담원',
-                        timestamp: serverTimestamp(),
-                        type: 'ai'
-                    });
-                }, 1000);
-            }
-
+                timestamp: new Date().toISOString(),
+                type: 'user',
+                tabType: activeTab === 0 ? 'ai' : 'personal'
+            };
+            ws.send(JSON.stringify(messageData));
             setNewMessage('');
         } catch (error) {
             console.error('메시지 전송 중 오류 발생:', error);
@@ -164,11 +188,10 @@ const ServiceChat = () => {
         }
     };
 
-
     // 날짜 포맷팅
     const formatDate = (timestamp) => {
         if (!timestamp) return '';
-        const date = timestamp.toDate();
+        const date = new Date(timestamp);
         return new Intl.DateTimeFormat('ko-KR', {
             hour: '2-digit',
             minute: '2-digit'
@@ -177,7 +200,7 @@ const ServiceChat = () => {
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
-        setMessages([]); // 탭 변경 시 메시지 초기화
+        setMessages([]);
     };
 
     const handleExit = () => {
@@ -189,8 +212,20 @@ const ServiceChat = () => {
         navigate('/');
     };
 
-    return (
+    // AI 이미지 아이콘 렌더링
+    const renderAiIcon = () => (
+        <Box
+            component="img"
+            src="/assets/images/chatai.png"
+            sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+            }}
+        />
+    );
 
+    return (
         <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh', pt: 8 }}>
             <Container maxWidth="md">
                 {/* 헤더 */}
@@ -249,11 +284,29 @@ const ServiceChat = () => {
                         sx={{
                             borderBottom: 1,
                             borderColor: 'divider',
-                            bgcolor: 'white'
+                            bgcolor: 'white',
+                            '& .MuiTab-root': {           // Tab 컴포넌트의 스타일
+                                paddingTop: '16px',        // 상단 여백 추가
+                                paddingBottom: '16px',     // 하단 여백 추가
+                                minHeight: '72px'          // 최소 높이 설정
+                            }
+
                         }}
                     >
                         <Tab
-                            icon={<SmartToyIcon />}
+                            icon={
+                                <Box
+                                    component="img"
+                                    src="/assets/images/chatai.png"
+                                    sx={{
+                                        width: 24,
+                                        height: 24,
+                                        objectFit: 'cover',
+                                        borderRadius: '50%',
+                                        marginBottom: '8px'
+                                    }}
+                                />
+                            }
                             label="AI 상담"
                             sx={{
                                 '&.Mui-selected': {
@@ -278,9 +331,10 @@ const ServiceChat = () => {
                             messages={messages}
                             messagesEndRef={messagesEndRef}
                             formatDate={formatDate}
-                            icon={<SmartToyIcon />}
+                            icon={renderAiIcon()}
                             agentName="AI 상담원"
                             welcomeMessage="안녕하세요! AI 상담원입니다. 무엇을 도와드릴까요?"
+                            isAiTyping={isAiTyping}
                         />
                     </TabPanel>
 
@@ -293,6 +347,7 @@ const ServiceChat = () => {
                             icon={<SupportAgentIcon />}
                             agentName="상담원"
                             welcomeMessage={`안녕하세요! 1:1 상담원입니다. 무엇을 도와드릴까요?\n${adminOnline ? '(상담원 연결 대기 중...)' : '(상담원 부재중)'}`}
+                            isAiTyping={isAiTyping}
                         />
                     </TabPanel>
 
@@ -402,7 +457,7 @@ const ServiceChat = () => {
 };
 
 // 채팅 인터페이스 컴포넌트
-const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, welcomeMessage }) => (
+const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, welcomeMessage, isAiTyping }) => (
     <List
         sx={{
             flex: 1,
@@ -415,7 +470,19 @@ const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, 
         {/* 환영 메시지 */}
         <ListItem>
             <ListItemAvatar>
-                <Avatar sx={{ bgcolor: '#2196F3' }}>
+                <Avatar
+                    sx={{
+                        bgcolor: '#2196F3',
+                        width: 40,
+                        height: 40,
+                        '& img': {
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: '50%'
+                        }
+                    }}
+                >
                     {icon}
                 </Avatar>
             </ListItemAvatar>
@@ -424,7 +491,6 @@ const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, 
                 secondary={welcomeMessage}
                 sx={{
                     '& .MuiListItemText-primary': { fontWeight: 600 }
-
                 }}
             />
         </ListItem>
@@ -441,7 +507,21 @@ const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, 
                 <ListItemAvatar>
                     <Avatar
                         src={message.userPhoto}
-                        sx={message.type === 'user' ? { ml: 2 } : { mr: 2 }}
+                        sx={message.type === 'user' ?
+                            { ml: 2 } :
+                            {
+                                mr: 2,
+                                bgcolor: '#2196F3',
+                                width: 40,
+                                height: 40,
+                                '& img': {
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',    // 이미지가 영역을 꽉 채우도록 변경
+                                    borderRadius: '50%'    // 이미지를 동그랗게 변경
+                                }
+                            }
+                        }
                     >
                         {message.type === 'user' ? null : icon}
                     </Avatar>
@@ -473,12 +553,49 @@ const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, 
                             display: 'inline-block',
                             maxWidth: '80%'
                         }
-                    }
-                    }
+                    }}
                 />
-
             </ListItem>
         ))}
+
+        {/* 입력 중 표시 */}
+        {isAiTyping && (
+            <ListItem>
+                <ListItemAvatar>
+                    <Avatar
+                        sx={{
+                            bgcolor: '#2196F3',
+                            width: 40,
+                            height: 40,
+                            '& img': {
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                borderRadius: '50%'
+                            }
+                        }}
+                    >
+                        {icon}
+                    </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                    primary={agentName}
+                    secondary={
+                        <Box sx={{
+                            backgroundColor: '#f5f5f5',
+                            padding: '8px 12px',
+                            borderRadius: '12px',
+                            display: 'inline-block'
+                        }}>
+                            <Typography component="span" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                답변 중
+                                <CircularProgress size={16} />
+                            </Typography>
+                        </Box>
+                    }
+                />
+            </ListItem>
+        )}
         <div ref={messagesEndRef} />
     </List>
 );
