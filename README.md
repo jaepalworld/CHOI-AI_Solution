@@ -1,6 +1,6 @@
 # 💇‍♀️ 헤어디자이너의 AI 혁명: Choi-Project 🤖
 
-![AI 헤어 트랜스포메이션](https://raw.githubusercontent.com/your-username/choi-project/main/src/assets/hero-image.jpg)
+![AI 헤어 트랜스포메이션]([https://raw.githubusercontent.com/your-username/choi-project/main/src/assets/hero-image.jpg](https://github.com/jaepalworld/minichoi-project/blob/4b3e24967af7112d3c2ef24d45fb218a1a9aba75/main1.png))
 
 ## 프로젝트 배경
 헤어 디자이너의 창의성과 AI 기술의 만남, Choi-Project는 개인의 경험에서 탄생한 혁신적인 웹 애플리케이션입니다.
