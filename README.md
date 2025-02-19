@@ -1,70 +1,63 @@
-# Getting Started with Create React App
+# 💇‍♀️ 헤어디자이너의 AI 혁명: Choi-Project 🤖
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+![AI 헤어 트랜스포메이션](https://raw.githubusercontent.com/your-username/choi-project/main/src/assets/hero-image.jpg)
 
-## Available Scripts
+## 프로젝트 배경
+헤어 디자이너의 창의성과 AI 기술의 만남, Choi-Project는 개인의 경험에서 탄생한 혁신적인 웹 애플리케이션입니다.
 
-In the project directory, you can run:
+## 프로젝트 하이라이트 ✨
 
-### `npm start`
+### 🌐 크로스 플랫폼 최적화
+- **완벽한 반응형 디자인**: 웹, 모바일 환경에서 일관된 사용자 경험
+- **화면 크기 무관 고품질 이미지**: 디바이스에 상관없이 선명한 UI
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 🔧 핵심 기술 스택
+- **프론트엔드**: React
+- **UI 라이브러리**: Material-UI
+- **상태 관리**: Redux
+- **백엔드**: FastAPI
+- **데이터베이스**: Firebase
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🚀 주요 기능
 
-### `npm test`
+#### 사용자 편의성 극대화
+- **Firebase 기반 데이터 관리**
+  - 사용자 히스토리 추적
+  - 개인화된 데이터 저장 및 관리
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+#### AI 혁신 서비스
+1. **지능형 로그인 시스템**
+2. **실시간 채팅 기능**
+3. **AI 광고 생성기**
+4. **AI 헤어 스타일 변환**
+   - 전문 헤어디자이너의 노하우를 AI 기술과 결합
+5. **AI 얼굴 변환**
 
-### `npm run build`
+## AI 기술의 시각적 혁신
+![AI 기술 시각화](https://raw.githubusercontent.com/your-username/choi-project/main/src/assets/ai-transformation.gif)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 프로젝트 모토
+*기술과 예술의 융합, 헤어 디자인의 새로운 미래*
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 시작하기
+```bash
+# 레포지토리 클론
+git clone https://github.com/your-username/choi-project.git
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# 의존성 설치
+npm install
 
-### `npm run eject`
+# 개발 서버 실행
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 향후 계획
+- 지속적인 AI 기능 고도화
+- 사용자 피드백 기반 서비스 개선
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 기여 및 피드백
+아이디어와 개선 제안을 환영합니다! 언제든 이슈 트래커를 통해 의견 공유 가능합니다.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+*💡 헤어 디자인의 새로운 혁신, Choi-Project*
