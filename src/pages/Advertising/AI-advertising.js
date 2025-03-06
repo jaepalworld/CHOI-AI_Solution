@@ -208,7 +208,7 @@ const AIAdvertising = () => {
                             disabled={!faceImage || !productImage}
                             sx={{ px: 6, py: 1.5 }}
                         >
-                            이미지 변환하기
+                            광고 생성하기
                         </Button>
                     </Box>
 

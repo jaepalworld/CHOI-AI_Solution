@@ -19,7 +19,9 @@ import {
     Dialog,
     DialogActions,
     DialogContent,
-    DialogTitle
+    DialogTitle,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
@@ -67,6 +69,7 @@ const ServiceChat = () => {
     const messagesEndRef = useRef(null);
     const [ws, setWs] = useState(null);
     const [isAiTyping, setIsAiTyping] = useState(false);
+    const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
 
     // 메시지 목록 자동 스크롤
     const scrollToBottom = () => {
@@ -77,42 +80,103 @@ const ServiceChat = () => {
         scrollToBottom();
     }, [messages]);
 
-    // WebSocket 연결 설정
+    // WebSocket 연결 설정 - 개선된 버전
     useEffect(() => {
         if (user) {  // 사용자가 로그인했을 때만 연결
-            const websocket = new WebSocket('ws://localhost:8000/ws');
+            let websocket;
+            let reconnectAttempts = 0;
+            const maxReconnectAttempts = 5;
 
-            websocket.onopen = () => {
-                console.log('WebSocket Connected');
+            const connectWebSocket = () => {
+                websocket = new WebSocket('ws://localhost:8000/ws');
+
+                websocket.onopen = () => {
+                    console.log('WebSocket Connected');
+                    reconnectAttempts = 0;
+
+                    // 사용자 정보 전송 - 중요: 서버에게 사용자 유형을 알림
+                    const userType = {
+                        userId: user.uid,
+                        userName: user.displayName || '사용자',
+                        userPhoto: user.photoURL,
+                        type: 'user_connect', // 사용자 연결 식별자 추가
+                        tabType: activeTab === 0 ? 'ai' : 'personal'
+                    };
+                    console.log("Sending user connection info:", userType); // 로그 추가
+                    websocket.send(JSON.stringify(userType));
+                };
+
+                // WebSocket 메시지 수신 처리
+                websocket.onmessage = (event) => {
+                    try {
+                        console.log("Raw WebSocket message received:", event.data);
+                        const data = JSON.parse(event.data);
+                        console.log("Parsed WebSocket message:", data);
+
+                        // 이 부분이 중요: 기존 메시지를 유지하면서 새 메시지 추가
+                        setMessages(prev => {
+                            // 이전 메시지와 중복 여부 확인하고 새 메시지만 추가
+                            const isDuplicate = prev.some(msg =>
+                                msg.text === data.text &&
+                                msg.type === data.type &&
+                                Math.abs(new Date(msg.timestamp) - new Date(data.timestamp)) < 1000
+                            );
+
+                            if (isDuplicate) {
+                                console.log("Duplicate message detected, not adding to state");
+                                return prev;
+                            }
+
+                            console.log("Previous messages:", prev);
+                            const newMessage = {
+                                id: Date.now(),
+                                ...data,
+                                timestamp: data.timestamp ? new Date(data.timestamp) : new Date()
+                            };
+
+                            console.log("Adding new message to state:", newMessage);
+                            // 기존 메시지 배열을 유지하면서 새 메시지 추가
+                            return [...prev, newMessage];
+                        });
+                    } catch (error) {
+                        console.error('메시지 처리 중 오류:', error);
+                    }
+                };
+
+                websocket.onerror = (error) => {
+                    console.error('WebSocket Error:', error);
+                    setNotification({
+                        open: true,
+                        message: '서버 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+                        severity: 'error'
+                    });
+                };
+
+                websocket.onclose = () => {
+                    console.log('WebSocket Disconnected');
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        setTimeout(connectWebSocket, 1000 * reconnectAttempts);
+                    } else {
+                        setNotification({
+                            open: true,
+                            message: '서버 연결이 종료되었습니다. 페이지를 새로고침해주세요.',
+                            severity: 'warning'
+                        });
+                    }
+                };
             };
 
-            websocket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                setMessages(prev => [...prev, {
-                    id: Date.now(),
-                    ...data,
-                    timestamp: new Date()
-                }]);
-                if (data.type === 'agent' && data.tabType === 'ai') {
-                    setIsAiTyping(false);
-                }
-            };
-
-            websocket.onerror = (error) => {
-                console.error('WebSocket Error:', error);
-            };
-
-            websocket.onclose = () => {
-                console.log('WebSocket Disconnected');
-            };
-
+            connectWebSocket();
             setWs(websocket);
 
             return () => {
-                websocket.close();
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    websocket.close();
+                }
             };
         }
-    }, [user]);
+    }, [user, activeTab]);
 
     // Firebase Auth 상태 감지
     useEffect(() => {
@@ -159,7 +223,7 @@ const ServiceChat = () => {
         }
     };
 
-    // 메시지 전송 처리
+    // 메시지 전송 처리 함수에서
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!newMessage.trim() || !user || !ws) return;
@@ -167,9 +231,12 @@ const ServiceChat = () => {
         try {
             setLoading(true);
 
-            if (activeTab === 0) {
-                setIsAiTyping(true);
-            }
+            // 중요: 메시지 상태를 덮어쓰지 않도록 콘솔 로그 추가
+            console.log("Current messages before sending:", messages);
+
+            // 여기서 문제가 발생할 수 있음: 새 메시지를 전송하기 전에 messages 상태를 초기화하는 코드가 있는지 확인
+
+            // WebSocket을 통해 메시지 전송
             const messageData = {
                 text: newMessage,
                 userId: user.uid,
@@ -177,21 +244,39 @@ const ServiceChat = () => {
                 userPhoto: user.photoURL,
                 timestamp: new Date().toISOString(),
                 type: 'user',
-                tabType: activeTab === 0 ? 'ai' : 'personal'
+                tabType: activeTab === 0 ? 'ai' : 'personal',
+                chatId: `chat_${user.uid}_${Date.now()}`  // 고유한 chatId 추가
             };
-            ws.send(JSON.stringify(messageData));
-            setNewMessage('');
+
+            if (ws.readyState === WebSocket.OPEN) {
+                console.log("Sending message:", messageData);
+                ws.send(JSON.stringify(messageData));
+                setNewMessage('');
+            } else {
+                throw new Error('WebSocket 연결이 끊겼습니다.');
+            }
+
+            // Firebase에 메시지 저장
+            await addDoc(collection(db, activeTab === 0 ? 'aiChats' : 'personalChats'), {
+                ...messageData,
+                timestamp: serverTimestamp()
+            });
         } catch (error) {
             console.error('메시지 전송 중 오류 발생:', error);
+            // 오류 처리...
         } finally {
             setLoading(false);
         }
     };
-
     // 날짜 포맷팅
     const formatDate = (timestamp) => {
         if (!timestamp) return '';
-        const date = new Date(timestamp);
+        const date = timestamp instanceof Date
+            ? timestamp
+            : typeof timestamp === 'string'
+                ? new Date(timestamp)
+                : timestamp.toDate?.() || new Date();
+
         return new Intl.DateTimeFormat('ko-KR', {
             hour: '2-digit',
             minute: '2-digit'
@@ -212,18 +297,31 @@ const ServiceChat = () => {
         navigate('/');
     };
 
-    // AI 이미지 아이콘 렌더링
-    const renderAiIcon = () => (
-        <Box
-            component="img"
-            src="/assets/images/chatai.png"
-            sx={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain'
-            }}
-        />
-    );
+    // AI 이미지 아이콘 렌더링 - 오류 처리 추가
+    const renderAiIcon = () => {
+        try {
+            return (
+                <Box
+                    component="img"
+                    src="/assets/images/chatai.png"
+                    onError={(e) => {
+                        console.error('이미지 로드 실패:', e);
+                        e.target.onerror = null;
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWJvdCI+PHBhdGggZD0iTTEyIDhWNEg4Ij48L3BhdGg+PHBhdGggZD0iTTEyIDRoNCI+PC9wYXRoPjxwYXRoIGQ9Ik0yMiAxMi45MVYxN2EyIDIgMCAwIDEtMiAyaC00di00aDRWOWE2IDYgMCAwIDAtMTIgMHY2aDR2NGgtNGEyIDIgMCAwIDEtMi0ydi00LjA5QTYgNiAwIDEgMSAyMiAxMi45MXoiPjwvcGF0aD48cGF0aCBkPSJNMTYgMTZoLjAxIj48L3BhdGg+PHBhdGggZD0iTTggMTZoLjAxIj48L3BhdGg+PHBhdGggZD0iTTEyIDIwdjIiPjwvcGF0aD48L3N2Zz4=';
+                    }}
+                    sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain'
+                    }}
+                    alt="AI 상담원"
+                />
+            );
+        } catch (error) {
+            console.error('AI 아이콘 렌더링 오류:', error);
+            return <SupportAgentIcon />;
+        }
+    };
 
     return (
         <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh', pt: 8 }}>
@@ -298,6 +396,10 @@ const ServiceChat = () => {
                                 <Box
                                     component="img"
                                     src="/assets/images/chatai.png"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWJvdCI+PHBhdGggZD0iTTEyIDhWNEg4Ij48L3BhdGg+PHBhdGggZD0iTTEyIDRoNCI+PC9wYXRoPjxwYXRoIGQ9Ik0yMiAxMi45MVYxN2EyIDIgMCAwIDEtMiAyaC00di00aDRWOWE2IDYgMCAwIDAtMTIgMHY2aDR2NGgtNGEyIDIgMCAwIDEtMi0ydi00LjA5QTYgNiAwIDEgMSAyMiAxMi45MXoiPjwvcGF0aD48cGF0aCBkPSJNMTYgMTZoLjAxIj48L3BhdGg+PHBhdGggZD0iTTggMTZoLjAxIj48L3BhdGg+PHBhdGggZD0iTTEyIDIwdjIiPjwvcGF0aD48L3N2Zz4=';
+                                    }}
                                     sx={{
                                         width: 24,
                                         height: 24,
@@ -305,6 +407,7 @@ const ServiceChat = () => {
                                         borderRadius: '50%',
                                         marginBottom: '8px'
                                     }}
+                                    alt="AI 상담"
                                 />
                             }
                             label="AI 상담"
@@ -379,7 +482,8 @@ const ServiceChat = () => {
                                 sx={{
                                     background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
                                     color: 'white',
-                                    minWidth: '100px'
+                                    minWidth: '100px',
+                                    width: 'auto'  // width 속성 수정
                                 }}
                                 endIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
                             >
@@ -451,6 +555,22 @@ const ServiceChat = () => {
                         </Button>
                     </DialogActions>
                 </Dialog>
+
+                {/* 알림 Snackbar */}
+                <Snackbar
+                    open={notification.open}
+                    autoHideDuration={5000}
+                    onClose={() => setNotification({ ...notification, open: false })}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                >
+                    <Alert
+                        onClose={() => setNotification({ ...notification, open: false })}
+                        severity={notification.severity}
+                        sx={{ width: '100%' }}
+                    >
+                        {notification.message}
+                    </Alert>
+                </Snackbar>
             </Container>
         </Box>
     );
@@ -517,8 +637,8 @@ const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, 
                                 '& img': {
                                     width: '100%',
                                     height: '100%',
-                                    objectFit: 'cover',    // 이미지가 영역을 꽉 채우도록 변경
-                                    borderRadius: '50%'    // 이미지를 동그랗게 변경
+                                    objectFit: 'cover',
+                                    borderRadius: '50%'
                                 }
                             }
                         }
@@ -551,7 +671,8 @@ const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, 
                             padding: '8px 12px',
                             borderRadius: '12px',
                             display: 'inline-block',
-                            maxWidth: '80%'
+                            maxWidth: '80%',
+                            wordBreak: 'break-word'  // 텍스트 줄바꿈 개선
                         }
                     }}
                 />

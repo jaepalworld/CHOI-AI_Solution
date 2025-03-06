@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, signInWithCustomToken } from 'firebase/auth';
 import KakaoLogin from 'react-kakao-login';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
@@ -46,10 +46,10 @@ const ImageMarquee = ({ images, direction }) => {
               height: '12rem',
               borderRadius: 2,
               overflow: 'hidden',
-              display: 'flex', // 추가
-              justifyContent: 'center', // 추가
-              alignItems: 'center', // 추가
-              backgroundColor: 'transparent' // 추가
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'transparent'
             }}
           >
             <img
@@ -59,7 +59,7 @@ const ImageMarquee = ({ images, direction }) => {
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
-                display: 'block' // 추가
+                display: 'block'
               }}
             />
           </Box>
@@ -81,9 +81,29 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [showAlert, setShowAlert] = useState(false);
 
   const leftImages = ['g1.jpg', 'g2.jpg', 'g3.jpg', 'g4.jpg', 'g5.jpg', 'g6.jpg', 'g7.jpg'];
   const rightImages = ['m1.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg'];
+
+  // 페이지 로드 시 관리자 로그인 체크 및 로그아웃
+  useEffect(() => {
+    const checkAndLogoutAdmin = async () => {
+      if (auth.currentUser && auth.currentUser.email.endsWith('@drawing-studio-admin.com')) {
+        setAlertMessage('관리자 계정으로 로그인되어 있어 로그아웃 처리되었습니다. 일반 계정으로 로그인해주세요.');
+        setShowAlert(true);
+
+        try {
+          await signOut(auth);
+        } catch (error) {
+          console.error('로그아웃 중 오류:', error);
+        }
+      }
+    };
+
+    checkAndLogoutAdmin();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -105,9 +125,20 @@ const Login = () => {
       return;
     }
 
+    // 관리자 도메인 체크
+    if (formData.email.endsWith('@drawing-studio-admin.com')) {
+      setError('관리자 계정은 관리자 로그인 페이지를 이용해주세요.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
+
+      // 이미 로그인되어 있는 경우 로그아웃 먼저 실행
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
 
       await signInWithEmailAndPassword(
         auth,
@@ -128,19 +159,116 @@ const Login = () => {
     }
   };
 
-  const kakaoOnSuccess = (data) => {
+  const kakaoOnSuccess = async (data) => {
     console.log('Kakao login success:', data);
-    navigate('/');
+    setLoading(true);
+    setError('');
+
+    try {
+      // 이미 로그인되어 있는 경우 로그아웃 먼저 실행
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+
+      // 테스트 중이므로 FastAPI 서버 연동 코드 주석 처리
+      /*
+      // FastAPI 서버에 카카오 토큰 전송
+      const response = await fetch('http://localhost:8000/api/auth/kakao', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          token: data.response.access_token,
+          profile: data.profile
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || '카카오 인증 처리 중 오류가 발생했습니다.');
+      }
+      
+      const authData = await response.json();
+      
+      // Firebase 커스텀 토큰으로 인증
+      await signInWithCustomToken(auth, authData.firebaseToken);
+      */
+
+      // 테스트용: 카카오 프로필 정보 로깅
+      console.log('카카오 프로필:', data.profile);
+
+      // 테스트용 알림
+      setAlertMessage('카카오 로그인 테스트 중입니다. 프로필 정보: ' +
+        (data.profile?.kakao_account?.profile?.nickname || '이름 없음'));
+      setShowAlert(true);
+
+      // 테스트 중이므로 홈으로 리디렉션 비활성화
+      // navigate('/');
+    } catch (error) {
+      console.error('Kakao auth error:', error);
+      setError('카카오 로그인 처리 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const kakaoOnFailure = (err) => {
     console.error('Kakao login error:', err);
+    setError('카카오 로그인 연결 중 오류가 발생했습니다.');
   };
 
-  const googleOnSuccess = (credentialResponse) => {
-    const decoded = jwtDecode(credentialResponse.credential);
-    console.log('Google login success:', decoded);
-    navigate('/');
+  const googleOnSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // 이미 로그인되어 있는 경우 로그아웃 먼저 실행
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+
+      const decoded = jwtDecode(credentialResponse.credential);
+      console.log('Google login success:', decoded);
+
+      // 테스트 중이므로 FastAPI 서버 연동 코드 주석 처리
+      /*
+      // FastAPI 서버에 구글 토큰 전송
+      const response = await fetch('http://localhost:8000/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          credential: credentialResponse.credential,
+          clientId: googleClientId
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || '구글 인증 처리 중 오류가 발생했습니다.');
+      }
+      
+      const authData = await response.json();
+      
+      // Firebase 커스텀 토큰으로 인증
+      await signInWithCustomToken(auth, authData.firebaseToken);
+      */
+
+      // 테스트용 알림
+      setAlertMessage('구글 로그인 테스트 중입니다. 이메일: ' +
+        (decoded.email || '이메일 없음'));
+      setShowAlert(true);
+
+      // 테스트 중이므로 홈으로 리디렉션 비활성화
+      // navigate('/');
+    } catch (error) {
+      console.error('Google auth error:', error);
+      setError('구글 로그인 처리 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -155,6 +283,16 @@ const Login = () => {
 
         {/* Main Content */}
         <Container maxWidth="sm" sx={{ py: 8, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          {showAlert && (
+            <Alert
+              severity="info"
+              sx={{ mb: 4 }}
+              onClose={() => setShowAlert(false)}
+            >
+              {alertMessage}
+            </Alert>
+          )}
+
           <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography
               variant="h4"
@@ -290,7 +428,12 @@ const Login = () => {
                     <Button
                       fullWidth
                       variant="outlined"
-                      onClick={onClick}
+                      onClick={(e) => {
+                        // 예방 조치: 원치 않는 리디렉션 방지
+                        e.preventDefault();
+                        // 원래 onClick 함수 호출
+                        onClick(e);
+                      }}
                       sx={{
                         py: 1.5,
                         bgcolor: '#FEE500',
@@ -314,7 +457,10 @@ const Login = () => {
               <Grid item xs={12}>
                 <GoogleLogin
                   onSuccess={googleOnSuccess}
-                  onError={() => console.log('Google Login Failed')}
+                  onError={() => {
+                    console.log('Google Login Failed');
+                    setError('구글 로그인 연결 중 오류가 발생했습니다.');
+                  }}
                   width="100%"
                   size="large"
                   text="continue_with"
@@ -324,7 +470,7 @@ const Login = () => {
             </Grid>
 
             <Box sx={{ mt: 4, textAlign: 'center' }}>
-              <Typography color="text.secondary">
+              <Typography color="text.secondary" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 Don't have an account?{' '}
                 <Button
                   onClick={() => navigate('/signup')}
@@ -339,6 +485,7 @@ const Login = () => {
                 >
                   Sign up
                 </Button>
+
               </Typography>
             </Box>
           </Paper>
