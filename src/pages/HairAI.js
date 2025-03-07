@@ -1,5 +1,6 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import TryAIDropdown from '../components/TryAIDropdown';
 import {
   AppBar,
   Toolbar,
@@ -49,10 +50,11 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-
+import { PaymentButton, PaymentModal } from '../pages/Payment/PaymentComponents';
 // 지연 로딩된 컴포넌트
 const ReviewCarousel = lazy(() => import('../components/ReviewCarousel'));
 // const FeatureCard = lazy(() => import('../components/FeatureCard'));
+
 
 // 웨이브 배경 컴포넌트
 const WaveBackground = () => (
@@ -144,12 +146,15 @@ const SkeletonLoader = () => (
 // HairAI 컴포넌트
 const HairAI = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // useLocation 추가
   // const theme = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  // 결제 모달 상태 추가
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const sliderSettings = {
     dots: true,
@@ -222,6 +227,7 @@ const HairAI = () => {
       title: '결과 확인',
       description: '새로운 모습을 확인하세요'
     }
+
   ];
 
   useEffect(() => {
@@ -245,6 +251,22 @@ const HairAI = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // 여기에 새로운 useEffect 추가
+  useEffect(() => {
+    // location.state에서 openPaymentModal 값을 확인하여 모달을 자동으로 열기
+    if (location.state?.openPaymentModal) {
+      // 모달 열기 전에 로그인 상태 확인
+      if (isAuthenticated) {
+        setPaymentModalOpen(true);
+        // 상태 초기화 (브라우저 뒤로가기 시 모달이 다시 열리는 것 방지)
+        navigate('/', { state: null, replace: true });
+      } else {
+        // 로그인되지 않은 경우 로그인 페이지로 이동
+        navigate('/login');
+      }
+    }
+  }, [location.state, isAuthenticated, navigate]);
 
   // 로그아웃 핸들러
   const handleLogout = async () => {
@@ -274,6 +296,20 @@ const HairAI = () => {
   // 맨 위로 스크롤
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePaymentModalOpen = () => {
+    if (!isAuthenticated) {
+      alert('결제 진행을 위해 로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+    setPaymentModalOpen(true);
+  };
+
+  // 결제 모달 닫기 핸들러
+  const handlePaymentModalClose = () => {
+    setPaymentModalOpen(false);
   };
 
   return (
@@ -309,6 +345,8 @@ const HairAI = () => {
           </Typography>
 
           <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 3 }}>
+
+            <PaymentButton onClick={handlePaymentModalOpen} />
             <Button
               sx={{
                 color: 'text.primary',
@@ -319,15 +357,7 @@ const HairAI = () => {
             >
               고객센터 상담
             </Button>
-            <Button
-              sx={{
-                color: 'text.primary',
-                fontWeight: 500,
-                '&:hover': { color: 'primary.main' }
-              }}
-            >
-              Try AI
-            </Button>
+            <TryAIDropdown isAuthenticated={isAuthenticated} />
             <Button
               sx={{
                 color: 'text.primary',
@@ -711,9 +741,39 @@ const HairAI = () => {
           }
         }}
       >
-        <MenuItem onClick={() => { navigate('/service/chat'); setMobileMenuOpen(false); }}>고객센터 상담</MenuItem>
-        <MenuItem onClick={() => setMobileMenuOpen(false)}>Try AI</MenuItem>
-        <MenuItem onClick={() => setMobileMenuOpen(false)}>Styles</MenuItem>
+        <MenuItem onClick={() => {
+          if (!isAuthenticated) {
+            alert('로그인을 해주세요.');
+            navigate('/login');
+          } else {
+            navigate('/advertising');
+          }
+          setMobileMenuOpen(false);
+        }}>
+          AI 광고
+        </MenuItem>
+        <MenuItem onClick={() => {
+          if (!isAuthenticated) {
+            alert('로그인을 해주세요.');
+            navigate('/login');
+          } else {
+            navigate('/hair/style');
+          }
+          setMobileMenuOpen(false);
+        }}>
+          헤어 스타일 바꾸기
+        </MenuItem>
+        <MenuItem onClick={() => {
+          if (!isAuthenticated) {
+            alert('로그인을 해주세요.');
+            navigate('/login');
+          } else {
+            navigate('/face/style');
+          }
+          setMobileMenuOpen(false);
+        }}>
+          얼굴 바꾸기
+        </MenuItem>
         {!isAuthenticated && (
           <MenuItem onClick={() => {
             navigate('/login');
@@ -723,7 +783,10 @@ const HairAI = () => {
           </MenuItem>
         )}
       </Menu>
-
+      <PaymentModal
+        open={paymentModalOpen}
+        handleClose={handlePaymentModalClose}
+      />
       {/* CSS 애니메이션 */}
       <style>
         {`
