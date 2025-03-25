@@ -36,6 +36,9 @@ import {
     updateDoc,
 } from 'firebase/firestore';
 
+// WebSocket URL 환경 변수
+const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+
 const AdminChat = () => {
     const { chatId } = useParams();
     const navigate = useNavigate();
@@ -48,8 +51,7 @@ const AdminChat = () => {
 
     // WebSocket 연결 설정
     useEffect(() => {
-
-        const websocket = new WebSocket('ws://localhost:8000/ws');
+        const websocket = new WebSocket(WS_URL);
 
         websocket.onopen = () => {
             console.log('WebSocket Connected');

@@ -38,6 +38,9 @@ import {
     getDocs
 } from 'firebase/firestore';
 
+// WebSocket URL 환경 변수
+const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+
 // 탭 패널 컴포넌트
 const TabPanel = (props) => {
     const { children, value, index, ...other } = props;
@@ -88,7 +91,7 @@ const ServiceChat = () => {
             const maxReconnectAttempts = 5;
 
             const connectWebSocket = () => {
-                websocket = new WebSocket('ws://localhost:8000/ws');
+                websocket = new WebSocket(WS_URL);
 
                 websocket.onopen = () => {
                     console.log('WebSocket Connected');
