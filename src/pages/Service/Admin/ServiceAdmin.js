@@ -46,6 +46,9 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
+// WebSocket URL 환경 변수
+const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+
 const ServiceAdmin = () => {
     const [user, setUser] = useState(null);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -87,7 +90,7 @@ const ServiceAdmin = () => {
                         setIsAdmin(true);
 
                         // WebSocket 연결
-                        const websocket = new WebSocket('ws://localhost:8000/ws');
+                        const websocket = new WebSocket(WS_URL);
 
                         websocket.onopen = () => {
                             console.log('WebSocket Connected (Admin)');
