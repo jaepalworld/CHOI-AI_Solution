@@ -113,7 +113,7 @@ const TryAIDropdown = ({ isAuthenticated }) => {
                                         헤어 스타일 바꾸기
                                     </MenuItem>
                                     <MenuItem onClick={() => handleMenuItemClick('/face/style')}>
-                                        얼굴 바꾸기
+                                        롤 모델 되어보기
                                     </MenuItem>
                                 </MenuList>
                             </ClickAwayListener>

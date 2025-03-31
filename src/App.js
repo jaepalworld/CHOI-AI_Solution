@@ -20,6 +20,9 @@ import AdminChat from './pages/Service/Admin/AdminChat';
 import PaymentSuccessPage from './pages/Payment/PaymentSuccessPage';
 import PaymentCancelPage from './pages/Payment/PaymentCancelPage';
 import PaymentFailPage from './pages/Payment/PaymentFailPage';
+import BackC from './pages/Back/BackC';
+import BackClear from './pages/Back/BackClear';
+import BackCreate from './pages/Back/BackCreate';
 
 // API 기본 URL 설정
 const API_BASE_URL = 'http://localhost:8000';
@@ -187,6 +190,10 @@ function App() {
           <Route path="/payment/fail" element={<PaymentFailPage />} />
           {/* AdminDashboard와 AdminPage 라우트가 중복되었으므로 하나만 남깁니다 */}
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/back" element={<BackC />} />
+          <Route path="/back/clear" element={<BackClear />} />
+          <Route path="/back/create" element={<BackCreate />} />
+
 
           <Route path="/admin/chat/:chatId" element={<AdminChat />} />
         </Routes>

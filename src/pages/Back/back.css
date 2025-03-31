@@ -1,0 +1,266 @@
+/* BackClear 애플리케이션 스타일시트 */
+
+/* 이 CSS 파일은 BackClear 앱의 모든 컴포넌트에 적용되는 기본 스타일을 정의합니다 */
+
+/* 전역 스타일 */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', 'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f8f9fa;
+  }
+  
+  /* 카드 스타일 */
+  .feature-card {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.15);
+  }
+  
+  .feature-card-image {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+  }
+  
+  .feature-card-content {
+    padding: 1.5rem;
+  }
+  
+  /* 스크롤 진행 막대 */
+  .scroll-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #e0e0e0;
+    z-index: 2000;
+  }
+  
+  .scroll-progress-indicator {
+    height: 100%;
+    background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+    transition: width 0.1s ease;
+  }
+  
+  /* 이미지 결과 컨테이너 */
+  .result-container {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    position: relative;
+  }
+  
+  .result-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  /* 로딩 오버레이 */
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 10;
+  }
+  
+  /* 스크롤 탑 버튼 */
+  .scroll-top-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #2196F3;
+    color: white;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .scroll-top-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 8px rgba(0,0,0,0.3);
+  }
+  
+  /* 반응형 스타일 */
+  @media (max-width: 960px) {
+    .hero-content h1 {
+      font-size: 2.5rem;
+    }
+    
+    .hero-content h5 {
+      font-size: 1.2rem;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .hero-content h1 {
+      font-size: 2rem;
+    }
+    
+    .hero-content h5 {
+      font-size: 1rem;
+    }
+    
+    .gradient-button {
+      padding: 0.5rem 1.5rem;
+    }
+  }
+  
+  /* 애니메이션 */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideInUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+  
+  /* 컴포넌트 스타일 */
+  .page-container {
+    animation: fadeIn 0.5s ease;
+    min-height: 100vh;
+  }
+  
+  .hero-section {
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+  }
+  
+  .hero-content {
+    animation: slideInUp 0.8s ease;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* 그라데이션 텍스트 효과 */
+  .gradient-text {
+    background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
+  }
+  
+  .gradient-text-orange {
+    background: linear-gradient(45deg, #FF9800 30%, #FFCA28 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
+  }
+  
+  /* 드롭존 스타일 */
+  .dropzone {
+    border: 2px dashed #ccc;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+    cursor: pointer;
+  }
+  
+  .dropzone:hover,
+  .dropzone.active {
+    border-color: #2196F3;
+    background-color: rgba(33, 150, 243, 0.05);
+  }
+  
+  .dropzone-icon {
+    font-size: 3rem;
+    color: #2196F3;
+    margin-bottom: 1rem;
+  }
+  
+  /* 버튼 스타일 */
+  .gradient-button {
+    background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+    border: 0;
+    border-radius: 30px;
+    box-shadow: 0 3px 5px 2px rgba(33, 203, 243, .3);
+    color: white;
+    padding: 0.75rem 2rem;
+    transition: all 0.3s ease;
+  }
+  
+  .gradient-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 8px 2px rgba(33, 203, 243, .4);
+  }
+  
+  .gradient-button-orange {
+    background: linear-gradient(45deg, #FF9800 30%, #FFCA28 90%);
+    box-shadow: 0 3px 5px 2px rgba(255, 152, 0, 0.3);
+  }
+  
+  .gradient-button-orange:hover {
+    box-shadow: 0 5px 8px 2px rgba(255, 152, 0, 0.4);
+    transform: translateY(-2px);
+  }

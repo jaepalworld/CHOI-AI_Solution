@@ -1,38 +1,12 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import TryAIDropdown from '../components/TryAIDropdown';
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Container,
-  Box,
-  Button,
-  Card,
-  CardMedia,
-  CardContent,
-  Grid,
-  Avatar,
-  Menu,
-  MenuItem,
-  IconButton,
-  // useTheme,
-  // alpha,
-  Fade,
-  Zoom,
-  CircularProgress,
-  Paper,
-  // Rating
+import {AppBar,Toolbar,Typography,Container,Box,Button,Card,CardMedia,CardContent,Grid,Avatar,
+  Menu,MenuItem,IconButton,// useTheme,// alpha,  Fade,Zoom,CircularProgress,Paper,// Rating
 } from '@mui/material';
 
 // @mui/lab에서 제공하는 타임라인 컴포넌트
-import {
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot
+import {Timeline,TimelineItem,TimelineSeparator,TimelineConnector,TimelineContent,TimelineDot
 } from '@mui/lab';
 
 // 아이콘
@@ -202,9 +176,15 @@ const HairAI = () => {
       icon: <AutoAwesomeIcon />
     },
     {
-      title: '얼굴 바꾸기',
+      title: '롤 모델 되어보기',
       description: '새로운 모습을 미리 체험해보세요',
       image: 'face.jpg',
+      icon: <AutoAwesomeIcon />
+    },
+    {
+      title: 'Back & C',
+      description: '배경 삭제 및 새로운 배경 생성',
+      image: 'backclear.jpg',
       icon: <AutoAwesomeIcon />
     }
   ];
@@ -600,12 +580,14 @@ const HairAI = () => {
                           navigate('/login');
                         } else {
                           // 각 서비스 별 경로
-                          if (feature.title === '얼굴 바꾸기') {
+                          if (feature.title === '롤 모델 되어보기') {
                             navigate('/face/style');
                           } else if (feature.title === '헤어 스타일 바꾸기') {
                             navigate('/hair/style');
                           } else if (feature.title === 'AI 광고') {
                             navigate('/advertising');
+                          } else if (feature.title === 'Back & C') {
+                            navigate('/back');
                           }
                         }
                       }}
@@ -772,8 +754,19 @@ const HairAI = () => {
           }
           setMobileMenuOpen(false);
         }}>
-          얼굴 바꾸기
+          롤 모델 되어보기
         </MenuItem>
+        <MenuItem onClick={() => {
+  if (!isAuthenticated) {
+    alert('로그인을 해주세요.');
+    navigate('/login');
+  } else {
+    navigate('/back');
+  }
+  setMobileMenuOpen(false);
+}}>
+  Back & C
+</MenuItem>
         {!isAuthenticated && (
           <MenuItem onClick={() => {
             navigate('/login');
