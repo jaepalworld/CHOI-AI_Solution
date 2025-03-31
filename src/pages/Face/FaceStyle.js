@@ -44,7 +44,7 @@ const VisuallyHiddenInput = styled('input')`
 `;
 
 // API 기본 URL 설정 (환경에 맞게 수정)
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const FaceStyle = () => {
     const navigate = useNavigate();

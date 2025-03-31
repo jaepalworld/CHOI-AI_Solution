@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import TryAIDropdown from '../components/TryAIDropdown';
 import {AppBar,Toolbar,Typography,Container,Box,Button,Card,CardMedia,CardContent,Grid,Avatar,
   Menu,MenuItem,IconButton,// useTheme,// alpha,  Fade,Zoom,CircularProgress,Paper,// Rating
+  Fade,Zoom,CircularProgress,Paper,
 } from '@mui/material';
 
 // @mui/lab에서 제공하는 타임라인 컴포넌트
@@ -184,7 +185,7 @@ const HairAI = () => {
     {
       title: 'Back & C',
       description: '배경 삭제 및 새로운 배경 생성',
-      image: 'backclear.jpg',
+      image: 'backc1.png',
       icon: <AutoAwesomeIcon />
     }
   ];
@@ -515,9 +516,9 @@ const HairAI = () => {
           Our Services
         </Typography>
         <Grid container spacing={4}>
-          {features.map((feature, index) => (
-            <Fade in timeout={500 * (index + 1)} key={index}>
-              <Grid item xs={12} md={4}>
+  {features.map((feature, index) => (
+    <Fade in timeout={500 * (index + 1)} key={index}>
+      <Grid item xs={12} sm={6} md={3}>
                 <Card
                   sx={{
                     height: '100%',
