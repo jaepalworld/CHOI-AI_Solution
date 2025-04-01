@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -20,16 +20,16 @@ import {
   Fade
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import axios from 'axios';
 
-// 드래그 앤 드롭 영역 컴포넌트
-const DropZone = ({ onFileSelect, processing }) => {
+// 드래그 앤 드롭 영역 컴포넌트 - 수정버전
+const DropZone = ({ onFileSelect, processing, previewUrl }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const fileInputRef = React.useRef(null);
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -58,7 +58,6 @@ const DropZone = ({ onFileSelect, processing }) => {
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      handleFile(file);
       onFileSelect(file);
     }
   };
@@ -66,18 +65,7 @@ const DropZone = ({ onFileSelect, processing }) => {
   const handleFileInput = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      handleFile(file);
       onFileSelect(file);
-    }
-  };
-
-  const handleFile = (file) => {
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -96,7 +84,7 @@ const DropZone = ({ onFileSelect, processing }) => {
       <input
         type="file"
         accept="image/*"
-        id="file-upload"
+        ref={fileInputRef}
         style={{ display: 'none' }}
         onChange={handleFileInput}
         disabled={processing}
@@ -108,6 +96,7 @@ const DropZone = ({ onFileSelect, processing }) => {
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        onClick={() => !processing && fileInputRef.current.click()}
         sx={{
           width: '100%',
           height: '100%',
@@ -119,21 +108,18 @@ const DropZone = ({ onFileSelect, processing }) => {
           borderColor: isDragging ? 'primary.main' : 'divider',
           borderRadius: '16px',
           transition: 'all 0.3s ease',
-          background: isDragging 
-            ? 'rgba(33, 150, 243, 0.05)'
-            : previewUrl 
-              ? `url(${previewUrl}) no-repeat center/contain`
-              : 'white',
+          background: previewUrl 
+            ? `url(${previewUrl}) no-repeat center/contain`
+            : 'white',
           position: 'relative',
-          cursor: 'pointer',
+          cursor: processing ? 'default' : 'pointer',
           '&:hover': {
-            borderColor: 'primary.main',
+            borderColor: processing ? 'divider' : 'primary.main',
             background: previewUrl 
               ? `url(${previewUrl}) no-repeat center/contain` 
-              : 'rgba(33, 150, 243, 0.05)'
+              : isDragging ? 'rgba(33, 150, 243, 0.05)' : 'white'
           }
         }}
-        onClick={() => !processing && document.getElementById('file-upload').click()}
       >
         {!previewUrl && (
           <Box sx={{ textAlign: 'center', p: 3, zIndex: 1 }}>
@@ -174,42 +160,126 @@ const DropZone = ({ onFileSelect, processing }) => {
   );
 };
 
+// 결과 미리보기 컴포넌트
+const ResultPreview = ({ result }) => {
+  if (!result) return null;
+  
+  return (
+    <Box
+      sx={{
+        mt: 3,
+        width: '100%',
+        height: '400px',
+        position: 'relative',
+        border: '2px solid',
+        borderColor: 'divider',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        backgroundColor: '#f1f1f1', // 체커보드 패턴을 위한 배경색
+        backgroundImage: `repeating-conic-gradient(#f9f9f9 0% 25%, #e1e1e1 0% 50%)`,
+        backgroundSize: '20px 20px', // 체커보드 패턴 크기
+      }}
+    >
+      <Box
+        component="img"
+        src={result}
+        alt="Transparent Background"
+        sx={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain'
+        }}
+      />
+    </Box>
+  );
+};
+
 // BackClear 메인 컴포넌트
 const BackClear = () => {
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
   const handleFileSelect = (selectedFile) => {
-    setFile(selectedFile);
-    setResult(null);
-    // 여기서는 UI만 구현하므로 가상의 처리 시간을 설정
-    setProcessing(true);
+    if (!selectedFile) return;
     
-    // 가상의 처리 시간 (실제로는 ComfyUI API 호출 로직이 들어갈 부분)
-    setTimeout(() => {
-      setProcessing(false);
-      // 결과 이미지는 임시로 원본 이미지를 사용 (실제로는 배경이 제거된 이미지)
-      const reader = new FileReader();
-      reader.onload = () => {
-        setResult(reader.result);
-      };
-      reader.readAsDataURL(selectedFile);
-      
-      // 성공 메시지 표시
+    setFile(selectedFile);
+    
+    // 파일 미리보기 생성
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewUrl(reader.result);
+    };
+    reader.readAsDataURL(selectedFile);
+    
+    // 결과 초기화
+    setResult(null);
+  };
+
+  const handleRemoveBackground = async () => {
+    if (!file) {
       setSnackbar({
         open: true, 
-        message: '배경이 성공적으로 제거되었습니다!', 
-        severity: 'success'
+        message: '이미지를 먼저 업로드해주세요.', 
+        severity: 'warning'
       });
-    }, 3000);
+      return;
+    }
+
+    setProcessing(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const response = await axios.post(`${API_URL}/api/backclear`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    timeout: 60000, // 적절한 타임아웃으로 조정
+    onUploadProgress: (progressEvent) => {
+      // 업로드 진행 상태 표시
+      const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      // 진행률 상태 업데이트 코드
+    }
+});
+
+      if (response.data && (response.data.firebase_url || response.data.result_image_url)) {
+        // firebase_url이 있으면 우선 사용, 없으면 result_image_url 사용
+        setResult(response.data.firebase_url || response.data.result_image_url);
+        setSnackbar({
+          open: true, 
+          message: response.data.message || '배경이 성공적으로 제거되었습니다!', 
+          severity: 'success'
+        });
+      } else {
+        console.error("Unexpected response format", response.data);
+        setSnackbar({
+          open: true, 
+          message: '예상치 못한 응답 형식입니다.', 
+          severity: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('배경 제거 중 오류 발생:', error);
+      setSnackbar({
+        open: true, 
+        message: `오류 발생: ${error.response?.data?.detail || error.message || '알 수 없는 오류'}`, 
+        severity: 'error'
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleReset = () => {
     setFile(null);
+    setPreviewUrl('');
     setResult(null);
   };
 
@@ -279,54 +349,71 @@ const BackClear = () => {
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Grid container spacing={4}>
           <Grid item xs={12}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 4,
-                borderRadius: '16px',
-                bgcolor: 'white',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.08)'
-              }}
-            >
-              <Typography variant="h4" gutterBottom sx={{ fontWeight: 600 }}>
-                배경 제거하기
-              </Typography>
-              <Typography variant="body1" color="text.secondary" paragraph>
-                이미지를 업로드하면 AI가 자동으로 배경을 제거합니다. 사람, 물체, 제품 등 다양한 대상의 배경을 깔끔하게 제거해보세요.
-              </Typography>
-
-              <DropZone onFileSelect={handleFileSelect} processing={processing} />
-
-              <Box
-                sx={{ 
-                  mt: 3, 
-                  display: 'flex', 
-                  justifyContent: 'center',
-                  gap: 2
+            <Fade in timeout={800}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 4,
+                  borderRadius: '16px',
+                  bgcolor: 'white',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.08)'
                 }}
               >
-                <Button
-                  variant="outlined"
-                  startIcon={<RestartAltIcon />}
-                  onClick={handleReset}
-                  disabled={!file || processing}
-                >
-                  초기화
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadIcon />}
-                  onClick={handleDownload}
-                  disabled={!result || processing}
-                  sx={{
-                    background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                    boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+                <Typography variant="h4" gutterBottom sx={{ fontWeight: 600 }}>
+                  배경 제거하기
+                </Typography>
+                <Typography variant="body1" color="text.secondary" paragraph>
+                  이미지를 업로드하면 AI가 자동으로 배경을 제거합니다. 사람, 물체, 제품 등 다양한 대상의 배경을 깔끔하게 제거해보세요.
+                </Typography>
+
+                <DropZone 
+                  onFileSelect={handleFileSelect}
+                  processing={processing}
+                  previewUrl={previewUrl}
+                />
+
+                {result && <ResultPreview result={result} />}
+
+                <Box
+                  sx={{ 
+                    mt: 3, 
+                    display: 'flex', 
+                    justifyContent: 'center',
+                    gap: 2
                   }}
                 >
-                  결과 다운로드
-                </Button>
-              </Box>
-            </Paper>
+                  <Button
+                    variant="outlined"
+                    startIcon={<RestartAltIcon />}
+                    onClick={handleReset}
+                    disabled={!file || processing}
+                  >
+                    초기화
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<CloudUploadIcon />}
+                    onClick={handleRemoveBackground}
+                    disabled={!file || processing}
+                    sx={{
+                      background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                      boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+                    }}
+                  >
+                    배경 제거하기
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleDownload}
+                    disabled={!result || processing}
+                    color="success"
+                  >
+                    결과 다운로드
+                  </Button>
+                </Box>
+              </Paper>
+            </Fade>
           </Grid>
         </Grid>
       </Container>
@@ -349,6 +436,7 @@ const BackClear = () => {
           </Typography>
           <Typography variant="body2" component="ol" sx={{ pl: 2 }}>
             <li>이미지를 드래그 앤 드롭하거나 클릭하여 업로드합니다.</li>
+            <li>배경 제거하기 버튼을 클릭합니다.</li>
             <li>AI가 자동으로 배경을 제거하는 것을 기다립니다.</li>
             <li>배경이 제거된 이미지를 확인하고 다운로드합니다.</li>
           </Typography>
@@ -360,6 +448,7 @@ const BackClear = () => {
             <li>최대 10MB 크기의 PNG, JPG, WEBP 파일을 지원합니다.</li>
             <li>복잡한 배경의 경우 결과가 완벽하지 않을 수 있습니다.</li>
             <li>삭제된 배경은 투명한 배경(알파 채널)으로 대체됩니다.</li>
+            <li>처리 시간은 이미지 크기와 복잡도에 따라 달라질 수 있습니다.</li>
           </Typography>
         </DialogContent>
         <DialogActions>
