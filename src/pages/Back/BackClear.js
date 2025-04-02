@@ -229,6 +229,7 @@ const BackClear = () => {
       });
       return;
     }
+    
 
     setProcessing(true);
     
@@ -236,7 +237,7 @@ const BackClear = () => {
       const formData = new FormData();
       formData.append('image', file);
 
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const API_URL = process.env.REACT_APP_API_URL;
 const response = await axios.post(`${API_URL}/api/backclear`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
@@ -246,8 +247,14 @@ const response = await axios.post(`${API_URL}/api/backclear`, formData, {
       // 업로드 진행 상태 표시
       const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
       // 진행률 상태 업데이트 코드
+      
     }
+    
 });
+
+console.log("API 응답:", response.data);
+console.log("결과 이미지 URL:", response.data.result_image_url);
+console.log("Firebase URL:", response.data.firebase_url);
 
       if (response.data && (response.data.firebase_url || response.data.result_image_url)) {
         // firebase_url이 있으면 우선 사용, 없으면 result_image_url 사용
