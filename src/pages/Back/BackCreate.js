@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -9,98 +9,93 @@ import {
   Button,
   Paper,
   Grid,
-  TextField,
   CircularProgress,
   IconButton,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Snackbar,
   Alert,
-  Divider,
   Fade,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel
+  TextField
 } from '@mui/material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
-import ImageIcon from '@mui/icons-material/Image';
 import DownloadIcon from '@mui/icons-material/Download';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import FormatPaintIcon from '@mui/icons-material/FormatPaint';
 import axios from 'axios';
 
-// 배경 카테고리 옵션
-const CATEGORY_OPTIONS = [
-  { value: "Beach", label: "해변" },
-  { value: "Neon City", label: "네온 시티" },
-  { value: "newyork City", label: "뉴욕 시티" },
-  { value: "underwater", label: "수중 세계" }
-];
-
-// 시간대 옵션
-const DAY_OPTIONS = [
-  { value: "daylight", label: "주간" },
-  { value: "nighttime", label: "야간" }
-];
-
-// 조명 방향 옵션
-const LIGHT_OPTIONS = [
-  { value: "Top", label: "위쪽" },
-  { value: "Bottom", label: "아래쪽" },
-  { value: "Left", label: "왼쪽" },
-  { value: "Right", label: "오른쪽" },
-  { value: "Center", label: "중앙" }
-];
-
-// 성별 옵션
-const GENDER_OPTIONS = [
-  { value: "male", label: "남성" },
-  { value: "female", label: "여성" }
-];
-
-// 이미지 업로드 컴포넌트
-const ImageUploadArea = ({ onFileSelect, processing, previewUrl }) => {
+// 드래그 앤 드롭 영역 컴포넌트
+const DropZone = ({ onFileSelect, processing, previewUrl }) => {
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = React.useRef(null);
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      onFileSelect(e.target.files[0]);
-    }
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isDragging) {
+      setIsDragging(true);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFileSelect(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      onFileSelect(file);
+    }
+  };
+
+  const handleFileInput = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      onFileSelect(file);
     }
   };
 
   return (
-    <Box sx={{ width: '100%', height: '250px' }}>
+    <Box
+      sx={{
+        width: '100%',
+        height: '400px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative'
+      }}
+    >
       <input
         type="file"
         accept="image/*"
         ref={fileInputRef}
         style={{ display: 'none' }}
-        onChange={handleFileChange}
+        onChange={handleFileInput}
         disabled={processing}
       />
       
       <Paper
         elevation={3}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onClick={() => !processing && fileInputRef.current.click()}
@@ -112,7 +107,7 @@ const ImageUploadArea = ({ onFileSelect, processing, previewUrl }) => {
           alignItems: 'center',
           justifyContent: 'center',
           border: '2px dashed',
-          borderColor: 'divider',
+          borderColor: isDragging ? 'primary.main' : 'divider',
           borderRadius: '16px',
           transition: 'all 0.3s ease',
           background: previewUrl 
@@ -124,18 +119,18 @@ const ImageUploadArea = ({ onFileSelect, processing, previewUrl }) => {
             borderColor: processing ? 'divider' : 'primary.main',
             background: previewUrl 
               ? `url(${previewUrl}) no-repeat center/contain` 
-              : processing ? 'white' : 'rgba(33, 150, 243, 0.05)'
+              : isDragging ? 'rgba(33, 150, 243, 0.05)' : 'white'
           }
         }}
       >
         {!previewUrl && (
           <Box sx={{ textAlign: 'center', p: 3, zIndex: 1 }}>
-            <AddPhotoAlternateIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+            <CloudUploadIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
             <Typography variant="h6">
-              주체 이미지 업로드
+              이미지를 드래그하거나 클릭하여 업로드
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              배경을 교체할 이미지를 업로드하세요
+              PNG, JPG, WEBP 파일 지원 (최대 10MB)
             </Typography>
           </Box>
         )}
@@ -172,14 +167,16 @@ const ResultPreview = ({ result }) => {
   if (!result) return null;
   
   return (
-    <Paper
-      elevation={3}
+    <Box
       sx={{
-        borderRadius: '16px',
-        overflow: 'hidden',
-        height: '300px',
+        mt: 3,
         width: '100%',
-        position: 'relative'
+        height: '400px',
+        position: 'relative',
+        border: '2px solid',
+        borderColor: 'divider',
+        borderRadius: '16px',
+        overflow: 'hidden'
       }}
     >
       <Box
@@ -192,119 +189,86 @@ const ResultPreview = ({ result }) => {
           objectFit: 'contain'
         }}
       />
-    </Paper>
+    </Box>
   );
+};
+
+// 배경 생성을 위한 기본 프롬프트
+const defaultPrompts = {
+  positive: "best quality, beautiful lighting, highly detailed background",
+  negative: "lowres, bad anatomy, bad hands, cropped, worst quality, nsfw"
 };
 
 // BackCreate 메인 컴포넌트
 const BackCreate = () => {
   const navigate = useNavigate();
-  const [image, setImage] = useState(null);
+  const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
-  const [info, setInfo] = useState('');
-  const [day, setDay] = useState('');
-  const [gender, setGender] = useState('');
-  const [category, setCategory] = useState('');
-  const [light, setLight] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState(null);
+  const [result, setResult] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  
+  // 배경 생성 파라미터
+  const [positivePrompt, setPositivePrompt] = useState(defaultPrompts.positive);
+  const [negativePrompt, setNegativePrompt] = useState(defaultPrompts.negative);
 
   const handleFileSelect = (selectedFile) => {
-    setImage(selectedFile);
+    if (!selectedFile) return;
+    
+    setFile(selectedFile);
     
     // 파일 미리보기 생성
-    if (selectedFile) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(selectedFile);
-    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewUrl(reader.result);
+    };
+    reader.readAsDataURL(selectedFile);
+    
+    // 결과 초기화
+    setResult(null);
   };
 
-  const handleGenerateBackground = async () => {
-    if (!info.trim()) {
+  const handleCreateBackground = async () => {
+    if (!file) {
       setSnackbar({
         open: true, 
-        message: '배경 설명을 입력해주세요.', 
-        severity: 'error'
+        message: '이미지를 먼저 업로드해주세요.', 
+        severity: 'warning'
       });
       return;
     }
-
-    if (!day) {
-      setSnackbar({
-        open: true, 
-        message: '시간대를 선택해주세요.', 
-        severity: 'error'
-      });
-      return;
-    }
-
-    if (!gender) {
-      setSnackbar({
-        open: true, 
-        message: '성별을 선택해주세요.', 
-        severity: 'error'
-      });
-      return;
-    }
-
-    if (!category) {
-      setSnackbar({
-        open: true, 
-        message: '배경 유형을 선택해주세요.', 
-        severity: 'error'
-      });
-      return;
-    }
-
-    if (!light) {
-      setSnackbar({
-        open: true, 
-        message: '조명 방향을 선택해주세요.', 
-        severity: 'error'
-      });
-      return;
-    }
-
-    if (!image) {
-      setSnackbar({
-        open: true, 
-        message: '이미지를 업로드해주세요.', 
-        severity: 'error'
-      });
-      return;
-    }
-
-    setGeneratedImage(null);
+    
     setProcessing(true);
     
     try {
-      const promptData = {
-        day,
-        gender,
-        category,
-        light,
-        info
-      };
-
       const formData = new FormData();
-      formData.append('image', image);
+      formData.append('image', file);
+      
+      // 파라미터 JSON 생성 - 간소화된 버전
+      const promptData = {
+        positive_prompt: positivePrompt,
+        negative_prompt: negativePrompt
+      };
+      
       formData.append('prompt', JSON.stringify(promptData));
 
-      const response = await axios.post('http://localhost:8002/background', formData, {
-        withCredentials: true,
-        timeout: 120000
+      const API_URL = process.env.REACT_APP_API_URL;
+      const response = await axios.post(`${API_URL}/api/background`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        timeout: 300000, // 5분 타임아웃 (배경 생성은 시간이 더 걸릴 수 있음)
       });
 
-      if (response.data && response.data.image_url) {
-        setGeneratedImage(response.data.image_url);
+      console.log("API 응답:", response.data);
+
+      if (response.data && (response.data.firebase_url || response.data.result_image_url)) {
+        // firebase_url이 있으면 우선 사용, 없으면 result_image_url 사용
+        setResult(response.data.firebase_url || response.data.result_image_url);
         setSnackbar({
           open: true, 
-          message: '배경이 성공적으로 생성되었습니다!', 
+          message: response.data.message || '배경이 성공적으로 생성되었습니다!', 
           severity: 'success'
         });
       } else {
@@ -316,10 +280,10 @@ const BackCreate = () => {
         });
       }
     } catch (error) {
-      console.error('이미지 생성중 오류 발생:', error);
+      console.error('배경 생성 중 오류 발생:', error);
       setSnackbar({
         open: true, 
-        message: `오류 발생: ${error.message || '알 수 없는 오류'}`, 
+        message: `오류 발생: ${error.response?.data?.detail || error.message || '알 수 없는 오류'}`, 
         severity: 'error'
       });
     } finally {
@@ -328,21 +292,16 @@ const BackCreate = () => {
   };
 
   const handleReset = () => {
-    setImage(null);
+    setFile(null);
     setPreviewUrl('');
-    setInfo('');
-    setDay('');
-    setGender('');
-    setCategory('');
-    setLight('');
-    setGeneratedImage(null);
+    setResult(null);
   };
 
   const handleDownload = () => {
-    if (generatedImage) {
+    if (result) {
       const link = document.createElement('a');
-      link.href = generatedImage;
-      link.download = `backcreate_${new Date().getTime()}.png`;
+      link.href = result;
+      link.download = `background_${new Date().getTime()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -355,15 +314,13 @@ const BackCreate = () => {
     }
   };
 
-
-
   const handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') return;
     setSnackbar({ ...snackbar, open: false });
   };
 
   return (
-    <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh', pt: 8, pb: 6 }}>
+    <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh', pt: 8 }}>
       {/* 헤더 */}
       <AppBar
         position="fixed"
@@ -390,7 +347,7 @@ const BackCreate = () => {
             sx={{
               flexGrow: 1,
               fontWeight: 600,
-              background: 'linear-gradient(45deg, #FF9800 30%, #FFCA28 90%)',
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}
@@ -400,10 +357,10 @@ const BackCreate = () => {
           <IconButton color="inherit" onClick={() => setHelpOpen(true)}>
             <HelpOutlineIcon />
           </IconButton>
-        </Toolbar>
+          </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" sx={{ py: 6 }}>
         <Grid container spacing={4}>
           <Grid item xs={12}>
             <Fade in timeout={800}>
@@ -417,169 +374,92 @@ const BackCreate = () => {
                 }}
               >
                 <Typography variant="h4" gutterBottom sx={{ fontWeight: 600 }}>
-                  AI로 배경 생성하기
+                  새로운 배경 만들기
                 </Typography>
                 <Typography variant="body1" color="text.secondary" paragraph>
-                  텍스트 설명과 이미지를 입력하면 AI가 배경을 생성하고 이미지와 합성합니다.
+                  배경 제거된 이미지를 업로드하면 AI가 새로운 배경을 생성합니다. 원하는 배경에 대한 설명을 입력해보세요.
                 </Typography>
 
                 <Grid container spacing={4}>
+                  {/* 이미지 업로드 영역 */}
                   <Grid item xs={12} md={6}>
-                    <Box sx={{ mb: 3 }}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        label="배경 프롬프트"
-                        variant="outlined"
-                        placeholder="원하는 배경에 대한 프롬프트를 입력해주세요"
-                        value={info}
-                        onChange={(e) => setInfo(e.target.value)}
-                        disabled={processing}
-                        sx={{ mb: 2 }}
-                      />
-                      
-
-
-                      <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={6}>
-                          <FormControl fullWidth>
-                            <InputLabel id="day-select-label">시간대</InputLabel>
-                            <Select
-                              labelId="day-select-label"
-                              value={day}
-                              label="시간대"
-                              onChange={(e) => setDay(e.target.value)}
-                              disabled={processing}
-                            >
-                              {DAY_OPTIONS.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <FormControl fullWidth>
-                            <InputLabel id="gender-select-label">성별</InputLabel>
-                            <Select
-                              labelId="gender-select-label"
-                              value={gender}
-                              label="성별"
-                              onChange={(e) => setGender(e.target.value)}
-                              disabled={processing}
-                            >
-                              {GENDER_OPTIONS.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                      </Grid>
-
-                      <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={6}>
-                          <FormControl fullWidth>
-                            <InputLabel id="category-select-label">배경 유형</InputLabel>
-                            <Select
-                              labelId="category-select-label"
-                              value={category}
-                              label="배경 유형"
-                              onChange={(e) => setCategory(e.target.value)}
-                              disabled={processing}
-                            >
-                              {CATEGORY_OPTIONS.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <FormControl fullWidth>
-                            <InputLabel id="light-select-label">조명 방향</InputLabel>
-                            <Select
-                              labelId="light-select-label"
-                              value={light}
-                              label="조명 방향"
-                              onChange={(e) => setLight(e.target.value)}
-                              disabled={processing}
-                            >
-                              {LIGHT_OPTIONS.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                      </Grid>
-                      
-                      <Typography variant="subtitle2" gutterBottom>
-                        주체 이미지 (필수)
-                      </Typography>
-                      <ImageUploadArea 
-                        onFileSelect={handleFileSelect} 
-                        processing={processing} 
-                        previewUrl={previewUrl}
-                      />
-                    </Box>
-                  </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      생성된 배경 이미지
+                    <Typography variant="h6" gutterBottom>
+                      1. 이미지 업로드
                     </Typography>
-                    <Box
-                      sx={{
-                        height: '300px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: '16px',
-                        bgcolor: '#f5f5f5',
-                        mb: 3
-                      }}
-                    >
-                      {generatedImage ? (
-                        <ResultPreview result={generatedImage} />
-                      ) : (
-                        <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
-                          <ImageIcon sx={{ fontSize: 60, opacity: 0.5, mb: 2 }} />
-                          <Typography>
-                            생성된 이미지가 여기에 표시됩니다
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
+                    <DropZone 
+                      onFileSelect={handleFileSelect}
+                      processing={processing}
+                      previewUrl={previewUrl}
+                    />
+                  </Grid>
+
+                  {/* 설정 영역 - 간소화됨 */}
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" gutterBottom>
+                      2. 배경 설명
+                    </Typography>
+                    
+                    <TextField
+                      label="원하는 배경 설명"
+                      fullWidth
+                      multiline
+                      rows={5}
+                      value={positivePrompt}
+                      onChange={(e) => setPositivePrompt(e.target.value)}
+                      variant="outlined"
+                      margin="normal"
+                      disabled={processing}
+                      helperText="원하는 배경의 특징을 자세히 설명해주세요. (예: 숲, 바다, 도시, 스튜디오 등)"
+                    />
+                    
+                    <TextField
+                      label="부정 프롬프트 (안전 필터링)"
+                      fullWidth
+                      multiline
+                      rows={2}
+                      value={negativePrompt}
+                      variant="outlined"
+                      margin="normal"
+                      disabled={true}
+                      helperText="부정 프롬프트는 안전한 이미지 생성을 위해 수정할 수 없습니다"
+                    />
                   </Grid>
                 </Grid>
 
-                <Divider sx={{ my: 3 }} />
+                {/* 결과 이미지 영역 */}
+                {result && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
+                      3. 생성 결과
+                    </Typography>
+                    <ResultPreview result={result} />
+                  </Grid>
+                )}
 
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                <Box
+                  sx={{ 
+                    mt: 3, 
+                    display: 'flex', 
+                    justifyContent: 'center',
+                    gap: 2
+                  }}
+                >
                   <Button
                     variant="outlined"
                     startIcon={<RestartAltIcon />}
                     onClick={handleReset}
-                    disabled={processing}
+                    disabled={!file || processing}
                   >
                     초기화
                   </Button>
                   <Button
                     variant="contained"
-                    startIcon={<AutoFixHighIcon />}
-                    onClick={handleGenerateBackground}
-                    disabled={processing}
+                    startIcon={<FormatPaintIcon />}
+                    onClick={handleCreateBackground}
+                    disabled={!file || processing}
                     sx={{
-                      background: 'linear-gradient(45deg, #FF9800 30%, #FFCA28 90%)',
-                      boxShadow: '0 3px 5px 2px rgba(255, 152, 0, 0.3)',
+                      background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                      boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
                     }}
                   >
                     배경 생성하기
@@ -588,10 +468,10 @@ const BackCreate = () => {
                     variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={handleDownload}
-                    disabled={!generatedImage || processing}
+                    disabled={!result || processing}
                     color="success"
                   >
-                    다운로드
+                    결과 다운로드
                   </Button>
                 </Box>
               </Paper>
@@ -610,27 +490,26 @@ const BackCreate = () => {
         <DialogTitle sx={{ fontWeight: 600 }}>BackCreate 사용 가이드</DialogTitle>
         <DialogContent>
           <Typography variant="body1" paragraph>
-            BackCreate는 텍스트 설명과 이미지를 기반으로 AI가 배경을 생성하고 이미지와 합성해주는 도구입니다.
+            BackCreate는 인물 이미지를 원하는 배경으로 바꿔주는 AI 기반 도구입니다.
           </Typography>
           
           <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 2 }}>
             사용 방법:
           </Typography>
           <Typography variant="body2" component="ol" sx={{ pl: 2 }}>
+            <li>배경이 제거된 인물 이미지를 업로드합니다.</li>
             <li>원하는 배경에 대한 설명을 입력합니다.</li>
-            <li>시간대, 성별, 배경 유형, 조명 방향을 선택합니다.</li>
-            <li>배경과 합성할 주체 이미지를 업로드합니다.</li>
-            <li>'배경 생성하기' 버튼을 클릭하여 AI가 배경을 생성하는 것을 기다립니다.</li>
-            <li>결과를 확인하고 마음에 들면 다운로드합니다.</li>
+            <li>배경 생성하기 버튼을 클릭합니다.</li>
+            <li>생성된 결과를 확인하고 다운로드합니다.</li>
           </Typography>
 
           <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 2 }}>
-            프롬프트 작성 팁:
+            유의사항:
           </Typography>
           <Typography variant="body2" component="ul" sx={{ pl: 2 }}>
-            <li>구체적인 장소, 시간, 날씨, 분위기를 명시하세요.</li>
-            <li>색상, 조명, 구도 등 시각적 요소를 언급하면 더 정확한 결과를 얻을 수 있습니다.</li>
-            <li>추천 프롬프트를 참고하여 작성해보세요.</li>
+            <li>투명 배경(PNG)의 인물 이미지에서 가장 좋은 결과를 얻을 수 있습니다.</li>
+            <li>배경 생성에는 약 30초~1분 정도 소요될 수 있습니다.</li>
+            <li>원하는 배경에 대한 자세한 설명을 추가할수록 더 정확한 결과를 얻을 수 있습니다.</li>
           </Typography>
         </DialogContent>
         <DialogActions>
