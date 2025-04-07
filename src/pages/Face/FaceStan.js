@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // axios 추가
+import axios from 'axios';
 import {
     Box,
     Container,
@@ -18,7 +18,9 @@ import {
     CardContent,
     CardActions,
     Divider,
-    Tooltip
+    Tooltip,
+    ToggleButtonGroup,
+    ToggleButton,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -29,6 +31,24 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import ReplayIcon from '@mui/icons-material/Replay';
 import DownloadIcon from '@mui/icons-material/Download';
 import HistoryIcon from '@mui/icons-material/History';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+
+// Styled components for toggle buttons
+const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
+    fontWeight: 600,
+    borderRadius: '24px',
+    padding: '8px 16px',
+    '&.MuiToggleButton-root': {
+        border: 'none',
+        backgroundColor: 'transparent',
+        color: theme.palette.text.secondary,
+        '&.Mui-selected': {
+            backgroundColor: 'rgba(33, 150, 243, 0.08)',
+            color: '#2196F3',
+            boxShadow: '0 2px 8px rgba(33, 150, 243, 0.25)',
+        },
+    },
+}));
 
 // 숨겨진 파일 입력 컴포넌트 스타일링
 const VisuallyHiddenInput = styled('input')`
@@ -43,26 +63,39 @@ const VisuallyHiddenInput = styled('input')`
   width: 1px;
 `;
 
-// API 기본 URL 설정 (환경에 맞게 수정)
+// API 기본 URL 설정
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-const FaceStyle = () => {
+const FaceStan = () => {
     const navigate = useNavigate();
     
+    // 버전 상태 관리 추가
+    const [version, setVersion] = useState('stan'); // 'stan' or 'pro'
+    
     // 상태 관리
-    const [originalImage, setOriginalImage] = useState(null);           // 원본 이미지 파일 (사용자 얼굴 이미지)
-    const [roleModelImage, setRoleModelImage] = useState(null);         // 롤모델 이미지 파일
-    const [originalPreview, setOriginalPreview] = useState(null);       // 원본 이미지 미리보기 URL
-    const [roleModelPreview, setRoleModelPreview] = useState(null);     // 롤모델 이미지 미리보기 URL
-    const [resultImage, setResultImage] = useState(null);               // 결과 이미지 URL
-    const [isUploading, setIsUploading] = useState(false);              // 업로드 상태
-    const [isProcessing, setIsProcessing] = useState(false);            // 처리 상태
-    const [uploadProgress, setUploadProgress] = useState(0);            // 업로드 진행도
-    const [alertOpen, setAlertOpen] = useState(false);                  // 알림 표시 여부
-    const [alertMessage, setAlertMessage] = useState("");               // 알림 메시지
-    const [alertSeverity, setAlertSeverity] = useState("info");         // 알림 유형 (success, error, warning, info)
-    const [historyItems, setHistoryItems] = useState([]);                 // 히스토리 항목 배열
-    const [savedCount, setSavedCount] = useState(0);                      // 저장된 항목 개수
+    const [originalImage, setOriginalImage] = useState(null);
+    const [roleModelImage, setRoleModelImage] = useState(null);
+    const [originalPreview, setOriginalPreview] = useState(null);
+    const [roleModelPreview, setRoleModelPreview] = useState(null);
+    const [resultImage, setResultImage] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+    const [alertSeverity, setAlertSeverity] = useState("info");
+    const [historyItems, setHistoryItems] = useState([]);
+    const [savedCount, setSavedCount] = useState(0);
+
+    // 버전 변경 핸들러
+    const handleVersionChange = (event, newVersion) => {
+        if (newVersion) {
+            setVersion(newVersion);
+            if (newVersion === 'pro') {
+                navigate('/face/pro');
+            }
+        }
+    };
 
     // 원본 이미지 업로드 처리
     const handleOriginalImageUpload = useCallback((event) => {
@@ -410,8 +443,32 @@ const FaceStyle = () => {
     }, []);
 
     return (
-        <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh', pt: 8 }}>
-            <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh' }}>
+            <Container maxWidth="lg" sx={{ py: 4 }}>
+                {/* 버전 선택 토글 버튼 */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+                    <ToggleButtonGroup
+                        value={version}
+                        exclusive
+                        onChange={handleVersionChange}
+                        aria-label="version selector"
+                        sx={{
+                            background: '#ffffff',
+                            p: 0.5,
+                            borderRadius: '28px',
+                            boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)'
+                        }}
+                    >
+                        <StyledToggleButton value="stan">
+                            Standard
+                        </StyledToggleButton>
+                        <StyledToggleButton value="pro">
+                            <AutoAwesomeIcon sx={{ mr: 1, fontSize: 16 }} />
+                            Pro
+                        </StyledToggleButton>
+                    </ToggleButtonGroup>
+                </Box>
+
                 {/* 헤더 섹션 */}
                 <Typography
                     variant="h3"
@@ -852,4 +909,4 @@ const FaceStyle = () => {
     );
 };
 
-export default FaceStyle;
+export default FaceStan;

@@ -68,18 +68,11 @@ const StyledButton = styled(Button)(({ theme }) => ({
     },
 }));
 
-// 성별에 따른 헤어스타일 옵션
+// 헤어스타일 옵션
 const hairStyleOptions = {
-    male: {
-        short: ['크루 컷', '페이드', '언더컷', '포마드'],
-        medium: ['퀴프', '슬릭백', '텍스처드 크롭', '사이드파트'],
-        long: ['맨 번', '어깨 길이', '레이어드 컷']
-    },
-    female: {
-        short: ['픽시 컷', '보브 컷', '비대칭 컷', '레이어드 숏'],
-        medium: ['롭 컷', '레이어드 미디엄', '어깨 길이 웨이브'],
-        long: ['롱 레이어', '비치 웨이브', '스트레이트 롱', 'V컷']
-    }
+    short: ['크루 컷', '페이드', '언더컷', '포마드', '픽시 컷', '보브 컷', '비대칭 컷', '레이어드 숏'],
+    medium: ['퀴프', '슬릭백', '텍스처드 크롭', '사이드파트', '롭 컷', '레이어드 미디엄', '어깨 길이 웨이브'],
+    long: ['맨 번', '어깨 길이', '레이어드 컷', '롱 레이어', '비치 웨이브', '스트레이트 롱', 'V컷']
 };
 
 const HairStyle = () => {
@@ -87,7 +80,6 @@ const HairStyle = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedImageTwo, setSelectedImageTwo] = useState(null);
     const [resultImage, setResultImage] = useState('');
-    const [selectedGender, setSelectedGender] = useState('');
     const [selectedLength, setSelectedLength] = useState('');
     const [selectedStyle, setSelectedStyle] = useState('');
     const [resultHistory, setResultHistory] = useState([]);
@@ -129,12 +121,6 @@ const HairStyle = () => {
     }, []);
 
     // 스타일 선택 핸들러
-    const handleGenderChange = useCallback((event) => {
-        setSelectedGender(event.target.value);
-        setSelectedLength('');
-        setSelectedStyle('');
-    }, []);
-
     const handleLengthChange = useCallback((event) => {
         setSelectedLength(event.target.value);
         setSelectedStyle('');
@@ -155,7 +141,7 @@ const HairStyle = () => {
                 return;
             }
 
-            if (!selectedGender || !selectedLength || !selectedStyle) {
+            if (!selectedLength || !selectedStyle) {
                 setError('스타일 선택을 완료해주세요');
                 return;
             }
@@ -262,33 +248,18 @@ const HairStyle = () => {
                                         </Typography>
 
                                         <StyledFormControl fullWidth>
-                                            <InputLabel>성별</InputLabel>
+                                            <InputLabel>머리 길이</InputLabel>
                                             <Select
-                                                value={selectedGender}
-                                                onChange={handleGenderChange}
-                                                label="성별"
+                                                value={selectedLength}
+                                                onChange={handleLengthChange}
+                                                label="머리 길이"
                                             >
-                                                <MenuItem value="">성별 선택</MenuItem>
-                                                <MenuItem value="male">남성</MenuItem>
-                                                <MenuItem value="female">여성</MenuItem>
+                                                <MenuItem value="">길이 선택</MenuItem>
+                                                <MenuItem value="short">짧은 머리</MenuItem>
+                                                <MenuItem value="medium">중간 머리</MenuItem>
+                                                <MenuItem value="long">긴 머리</MenuItem>
                                             </Select>
                                         </StyledFormControl>
-
-                                        <Collapse in={!!selectedGender}>
-                                            <StyledFormControl fullWidth>
-                                                <InputLabel>머리 길이</InputLabel>
-                                                <Select
-                                                    value={selectedLength}
-                                                    onChange={handleLengthChange}
-                                                    label="머리 길이"
-                                                >
-                                                    <MenuItem value="">길이 선택</MenuItem>
-                                                    <MenuItem value="short">짧은 머리</MenuItem>
-                                                    <MenuItem value="medium">중간 머리</MenuItem>
-                                                    <MenuItem value="long">긴 머리</MenuItem>
-                                                </Select>
-                                            </StyledFormControl>
-                                        </Collapse>
 
                                         <Collapse in={!!selectedLength}>
                                             <StyledFormControl fullWidth>
@@ -299,8 +270,8 @@ const HairStyle = () => {
                                                     label="헤어스타일"
                                                 >
                                                     <MenuItem value="">스타일 선택</MenuItem>
-                                                    {selectedGender && selectedLength &&
-                                                        hairStyleOptions[selectedGender][selectedLength].map((style) => (
+                                                    {selectedLength &&
+                                                        hairStyleOptions[selectedLength].map((style) => (
                                                             <MenuItem key={style} value={style}>
                                                                 {style}
                                                             </MenuItem>
