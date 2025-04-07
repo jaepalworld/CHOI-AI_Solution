@@ -5,13 +5,14 @@ import { onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
 // import Home from './pages/Home';
 import HairAI from './pages/HairAI';
+import LookBook from './pages/lookbook/LookBook';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import MyPage from './pages/MyPage';
 import HairStyle from './pages/Hair/HairStyle';
-import FaceStyle from './pages/Face/FaceStyle';
+import FaceStan from './pages/Face/FaceStan.js';
+import FacePro from './pages/Face/FacePro.js';
 import ServiceChat from './pages/Service/ServiceChat';
-import AIAdvertising from './pages/Advertising/AI-advertising';
 import ComfyTest from './pages/Comfyui/ComfyTest';
 import AdminPage from './pages/Service/Admin/AdminPage';
 import ChatManagement from './pages/Service/Admin/ChatManagement';
@@ -83,9 +84,9 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/hair/style" element={<HairStyle />} />
-          <Route path="/face/style" element={<FaceStyle />} />
+          <Route path="/face/FaceStan" element={<FaceStan />} />
+          <Route path="/lookbook" element={<LookBook />} />
           <Route path="/service/chat" element={<ServiceChat />} />
-          <Route path="/advertising" element={<AIAdvertising />} />
           {/* <Route path="/Comfyui/ComfyTest" element={<ComfyTest />} /> */}
           <Route path="/admin/chat-management" element={<ChatManagement />} />
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
@@ -96,7 +97,7 @@ function App() {
           <Route path="/back" element={<BackC />} />
           <Route path="/back/clear" element={<BackClear />} />
           <Route path="/back/create" element={<BackCreate />} />
-
+          <Route path="/face/FacePro" element={<FacePro />} />
 
           <Route path="/admin/chat/:chatId" element={<AdminChat />} />
         </Routes>

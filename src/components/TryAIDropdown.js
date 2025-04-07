@@ -106,7 +106,7 @@ const TryAIDropdown = ({ isAuthenticated }) => {
                                     onKeyDown={handleListKeyDown}
                                     sx={{ width: 200 }}
                                 >
-                                    <MenuItem onClick={() => handleMenuItemClick('/advertising')}>
+                                    <MenuItem onClick={() => handleMenuItemClick('/lookbook/book')}>
                                         룩북 에디터
                                     </MenuItem>
                                     <MenuItem onClick={() => handleMenuItemClick('/hair/style')}>

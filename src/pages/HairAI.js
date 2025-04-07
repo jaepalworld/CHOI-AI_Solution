@@ -596,12 +596,12 @@ const HairAI = () => {
                           navigate('/login');
                         } else {
                           // 각 서비스 별 경로
-                          if (feature.title === '롤 모델 되어보기') {
-                            navigate('/face/style');
-                          } else if (feature.title === '헤어 스타일 바꾸기') {
+                          if (feature.title === '페이스 스튜디오') {
+                            navigate('/face/FaceStan');
+                          } else if (feature.title === '헤어 스튜디오') {
                             navigate('/hair/style');
-                          } else if (feature.title === 'AI 광고') {
-                            navigate('/advertising');
+                          } else if (feature.title === '룩북 에디터') {
+                            navigate('/lookbook');
                           } else if (feature.title === 'Back & C') {
                             navigate('/back');
                           }
@@ -771,11 +771,11 @@ const HairAI = () => {
             alert('로그인을 해주세요.');
             navigate('/login');
           } else {
-            navigate('/advertising');
+            navigate('/lookbook');
           }
           setMobileMenuOpen(false);
         }}>
-          AI 광고
+          LOOKBOOK
         </MenuItem>
         <MenuItem onClick={() => {
           if (!isAuthenticated) {
@@ -793,7 +793,7 @@ const HairAI = () => {
             alert('로그인을 해주세요.');
             navigate('/login');
           } else {
-            navigate('/face/style');
+            navigate('/face/FaceStan');
           }
           setMobileMenuOpen(false);
         }}>

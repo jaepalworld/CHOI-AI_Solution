@@ -86,16 +86,17 @@ const FaceStan = () => {
     const [alertSeverity, setAlertSeverity] = useState("info");
     const [historyItems, setHistoryItems] = useState([]);
     const [savedCount, setSavedCount] = useState(0);
+    const [firebaseUrl, setFirebaseUrl] = useState(null);
 
     // 버전 변경 핸들러
     const handleVersionChange = (event, newVersion) => {
         if (newVersion) {
-            setVersion(newVersion);
-            if (newVersion === 'pro') {
-                navigate('/face/pro');
-            }
+          setVersion(newVersion);
+          if (newVersion === 'pro') {
+            navigate('/face/FacePro'); 
+          }
         }
-    };
+      };
 
     // 원본 이미지 업로드 처리
     const handleOriginalImageUpload = useCallback((event) => {
@@ -326,13 +327,19 @@ const FaceStan = () => {
             }, 500);
 
             // 응답 처리
-            if (response.data && response.data.result_image_url) {
+            if (response.data) {
                 // 처리 완료 (100%)
                 setUploadProgress(100);
                 clearInterval(processingInterval);
                 
-                // 결과 이미지 설정
-                const resultImageUrl = response.data.result_image_url;
+                // Firebase URL이 있으면 저장
+                if (response.data.firebase_url) {
+                    setFirebaseUrl(response.data.firebase_url);
+                }
+                
+                // 결과 이미지 설정 - Firebase URL 우선 사용
+                const resultImageUrl = response.data.firebase_url || response.data.result_image_url;
+                console.log("사용할 이미지 URL:", resultImageUrl);
                 setResultImage(resultImageUrl);
 
                 // 히스토리에 추가 (결과 이미지만)
@@ -714,6 +721,13 @@ const FaceStan = () => {
                                             width: '100%',
                                             height: '100%',
                                             objectFit: 'contain'
+                                        }}
+                                        onError={(e) => {
+                                            console.error("이미지 로딩 실패:", resultImage);
+                                            // Firebase URL로 대체 시도
+                                            if (firebaseUrl && resultImage !== firebaseUrl) {
+                                                e.target.src = firebaseUrl;
+                                            }
                                         }}
                                     />
                                 ) : (

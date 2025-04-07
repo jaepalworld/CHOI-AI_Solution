@@ -377,7 +377,7 @@ const BackCreate = () => {
                   새로운 배경 만들기
                 </Typography>
                 <Typography variant="body1" color="text.secondary" paragraph>
-                  배경 제거된 이미지를 업로드하면 AI가 새로운 배경을 생성합니다. 원하는 배경에 대한 설명을 입력해보세요.
+                  이미지를 업로드하면 새로운 배경을 생성합니다. 원하는 배경에 대한 영문으로 입력해보세요.
                 </Typography>
 
                 <Grid container spacing={4}>

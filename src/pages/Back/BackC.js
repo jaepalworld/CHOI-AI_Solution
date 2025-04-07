@@ -169,90 +169,7 @@ const BackC = () => {
         </Toolbar>
       </AppBar>
 
-      {/* 히어로 섹션 - 데모 영상 */}
-      <Box sx={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden', pt: 8 }}>
-        <WaveBackground />
-        <Container maxWidth="lg" sx={{ height: '100%', display: 'flex', alignItems: 'center' }}>
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={6}>
-              <Fade in timeout={1000}>
-                <Box>
-                  <Typography
-                    variant="h2"
-                    sx={{
-                      fontWeight: 700,
-                      mb: 3,
-                      background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent'
-                    }}
-                  >
-                    BackClear
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{ mb: 4, color: 'text.secondary' }}
-                  >
-                    배경 삭제와 생성을 한번에! 당신의 이미지에 새로운 생명을 불어넣으세요.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    endIcon={<PlayCircleOutlineIcon />}
-                    sx={{
-                      background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                      boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-                      px: 4,
-                      py: 1.5,
-                      borderRadius: '30px',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 5px 8px 2px rgba(33, 203, 243, .4)',
-                      },
-                      transition: 'all 0.3s ease'
-                    }}
-                    onClick={() => document.getElementById('demoVideo').scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    사용법 보기
-                  </Button>
-                </Box>
-              </Fade>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Fade in timeout={1500}>
-                <Box
-                  sx={{
-                    position: 'relative',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'linear-gradient(45deg, rgba(33, 150, 243, 0.3), rgba(33, 203, 243, 0.3))',
-                      zIndex: 1
-                    }
-                  }}
-                >
-                  <CardMedia
-                    component="img"
-                    image="/assets/images/backclear-hero.jpg"
-                    alt="BackClear Hero"
-                    sx={{
-                      height: { xs: '300px', md: '400px' },
-                      objectFit: 'cover'
-                    }}
-                  />
-                </Box>
-              </Fade>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+      
 
       {/* 사용법 데모 영상 섹션 */}
       <Box id="demoVideo" sx={{ py: 12, bgcolor: 'white' }}>
@@ -448,42 +365,7 @@ const BackC = () => {
         </Grid>
       </Container>
 
-      {/* 푸터 */}
-      <Box sx={{ bgcolor: '#f1f8fe', py: 6 }}>
-        <Container>
-          <Grid container justifyContent="space-between" alignItems="center">
-            <Grid item>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}
-              >
-                BackClear
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                © 2025 BackClear. All rights reserved.
-              </Typography>
-            </Grid>
-            <Grid item>
-              <Button
-                variant="contained"
-                endIcon={<ArrowForwardIcon />}
-                sx={{
-                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                  boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-                }}
-                onClick={() => navigate('/back/clear')}
-              >
-                시작하기
-              </Button>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+      
 
       {/* 스크롤 탑 버튼 */}
       <Zoom in={showScrollTop}>
