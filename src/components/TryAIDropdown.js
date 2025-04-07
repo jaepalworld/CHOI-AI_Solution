@@ -107,13 +107,13 @@ const TryAIDropdown = ({ isAuthenticated }) => {
                                     sx={{ width: 200 }}
                                 >
                                     <MenuItem onClick={() => handleMenuItemClick('/advertising')}>
-                                        AI 광고
+                                        룩북 에디터
                                     </MenuItem>
                                     <MenuItem onClick={() => handleMenuItemClick('/hair/style')}>
-                                        헤어 스타일 바꾸기
+                                        헤어 스튜디오
                                     </MenuItem>
                                     <MenuItem onClick={() => handleMenuItemClick('/face/style')}>
-                                        롤 모델 되어보기
+                                        페이스 스튜디오
                                     </MenuItem>
                                 </MenuList>
                             </ClickAwayListener>
