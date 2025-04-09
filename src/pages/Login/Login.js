@@ -6,68 +6,24 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
   Divider,
   Alert,
   IconButton,
   InputAdornment
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebase/firebase';
-import { signInWithEmailAndPassword, signOut, signInWithCustomToken } from 'firebase/auth';
-import KakaoLogin from 'react-kakao-login';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { auth } from '../../firebase/firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-const ImageMarquee = ({ images, direction }) => {
-  return (
-    <Box
-      sx={{
-        height: '100vh',
-        overflow: 'hidden',
-        width: '16.666667%',
-        pl: direction === 'up' ? 9 : -1 // Add padding-left only to the left marquee
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          animation: `slide 20s linear infinite ${direction === 'up' ? 'reverse' : 'normal'}`
-        }}
-      >
-        {[...images, ...images].map((img, index) => (
-          <Box
-            key={index}
-            sx={{
-              width: '12rem',
-              height: '12rem',
-              borderRadius: 2,
-              overflow: 'hidden',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: 'transparent'
-            }}
-          >
-            <img
-              src={`/assets/login/${direction === 'up' ? 'girl' : 'man'}/${img}`}
-              alt=""
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block'
-              }}
-            />
-          </Box>
-        ))}
-      </Box>
-    </Box>
-  );
-};
+// 커스텀 컴포넌트 가져오기
+import ImageMarquee from './components/ImageMarquee';
+import SocialLogins from './components/SocialLogins';
+
+// CSS 가져오기
+import './styles/Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -159,6 +115,7 @@ const Login = () => {
     }
   };
 
+  // 카카오 로그인 성공 핸들러
   const kakaoOnSuccess = async (data) => {
     console.log('Kakao login success:', data);
     setLoading(true);
@@ -169,34 +126,6 @@ const Login = () => {
       if (auth.currentUser) {
         await signOut(auth);
       }
-
-      // 테스트 중이므로 FastAPI 서버 연동 코드 주석 처리
-      /*
-      // FastAPI 서버에 카카오 토큰 전송
-      const response = await fetch('http://localhost:8000/api/auth/kakao', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          token: data.response.access_token,
-          profile: data.profile
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || '카카오 인증 처리 중 오류가 발생했습니다.');
-      }
-      
-      const authData = await response.json();
-      
-      // Firebase 커스텀 토큰으로 인증
-      await signInWithCustomToken(auth, authData.firebaseToken);
-      */
-
-      // 테스트용: 카카오 프로필 정보 로깅
-      console.log('카카오 프로필:', data.profile);
 
       // 테스트용 알림
       setAlertMessage('카카오 로그인 테스트 중입니다. 프로필 정보: ' +
@@ -213,11 +142,13 @@ const Login = () => {
     }
   };
 
+  // 카카오 로그인 실패 핸들러
   const kakaoOnFailure = (err) => {
     console.error('Kakao login error:', err);
     setError('카카오 로그인 연결 중 오류가 발생했습니다.');
   };
 
+  // 구글 로그인 성공 핸들러
   const googleOnSuccess = async (credentialResponse) => {
     setLoading(true);
     setError('');
@@ -230,31 +161,6 @@ const Login = () => {
 
       const decoded = jwtDecode(credentialResponse.credential);
       console.log('Google login success:', decoded);
-
-      // 테스트 중이므로 FastAPI 서버 연동 코드 주석 처리
-      /*
-      // FastAPI 서버에 구글 토큰 전송
-      const response = await fetch('http://localhost:8000/api/auth/google', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          credential: credentialResponse.credential,
-          clientId: googleClientId
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || '구글 인증 처리 중 오류가 발생했습니다.');
-      }
-      
-      const authData = await response.json();
-      
-      // Firebase 커스텀 토큰으로 인증
-      await signInWithCustomToken(auth, authData.firebaseToken);
-      */
 
       // 테스트용 알림
       setAlertMessage('구글 로그인 테스트 중입니다. 이메일: ' +
@@ -269,6 +175,12 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 구글 로그인 실패 핸들러
+  const googleOnError = () => {
+    console.log('Google Login Failed');
+    setError('구글 로그인 연결 중 오류가 발생했습니다.');
   };
 
   return (
@@ -418,56 +330,14 @@ const Login = () => {
 
             <Divider sx={{ my: 3 }}>or continue with</Divider>
 
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <KakaoLogin
-                  token={kakaoClientId}
-                  onSuccess={kakaoOnSuccess}
-                  onFail={kakaoOnFailure}
-                  render={({ onClick }) => (
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      onClick={(e) => {
-                        // 예방 조치: 원치 않는 리디렉션 방지
-                        e.preventDefault();
-                        // 원래 onClick 함수 호출
-                        onClick(e);
-                      }}
-                      sx={{
-                        py: 1.5,
-                        bgcolor: '#FEE500',
-                        color: '#000000',
-                        borderColor: '#FEE500',
-                        borderRadius: 2,
-                        '&:hover': {
-                          bgcolor: '#FDD800',
-                          borderColor: '#FDD800',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        },
-                        textTransform: 'none',
-                        fontSize: '1rem'
-                      }}
-                    >
-                      Continue with Kakao
-                    </Button>
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <GoogleLogin
-                  onSuccess={googleOnSuccess}
-                  onError={() => {
-                    console.log('Google Login Failed');
-                    setError('구글 로그인 연결 중 오류가 발생했습니다.');
-                  }}
-                  width="100%"
-                  size="large"
-                  text="continue_with"
-                  shape="rectangular"
-                />
-              </Grid>
-            </Grid>
+            {/* 소셜 로그인 컴포넌트 */}
+            <SocialLogins 
+              kakaoClientId={kakaoClientId}
+              onKakaoSuccess={kakaoOnSuccess}
+              onKakaoFailure={kakaoOnFailure}
+              onGoogleSuccess={googleOnSuccess}
+              onGoogleError={googleOnError}
+            />
 
             <Box sx={{ mt: 4, textAlign: 'center' }}>
               <Typography color="text.secondary" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -485,7 +355,6 @@ const Login = () => {
                 >
                   Sign up
                 </Button>
-
               </Typography>
             </Box>
           </Paper>
@@ -497,21 +366,5 @@ const Login = () => {
     </GoogleOAuthProvider>
   );
 };
-
-// Add this to your global CSS or styles
-const styles = `
-@keyframes slide {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-50%);
-  }
-}
-`;
-
-const styleSheet = document.createElement('style');
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
 
 export default Login;

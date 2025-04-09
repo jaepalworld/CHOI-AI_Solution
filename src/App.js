@@ -6,9 +6,10 @@ import axios from 'axios';
 // import Home from './pages/Home';
 import HairAI from './pages/HairAI';
 import LookBook from './pages/lookbook/LookBook';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import MyPage from './pages/MyPage';
+// import Login from './pages/Login';
+// import Signup from './pages/Signup';
+import { Login, Signup } from './pages/Login'; // 리팩토링된 로그인 관련 import
+import MyPage from './pages/MyPage/MyPage'; // 경로 업데이트
 import HairStyle from './pages/Hair/HairStyle';
 import FaceStan from './pages/Face/FaceStan.js';
 import FacePro from './pages/Face/FacePro.js';
@@ -24,7 +25,7 @@ import PaymentFailPage from './pages/Payment/PaymentFailPage';
 import BackC from './pages/Back/BackC';
 import BackClear from './pages/Back/BackClear';
 import BackCreate from './pages/Back/BackCreate';
-import LandingPage from './components/LandingPage'; // 새로 만든 랜딩 페이지
+import LandingPage from './components/LandingPage';
 
 
 // API 기본 URL 설정

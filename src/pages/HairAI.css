@@ -1,0 +1,249 @@
+/* HairAI 스타일 */
+
+/* 구글 폰트 임포트 */
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+/* 폰트 패밀리 정의 */
+:root {
+  --font-script: 'Dancing Script', cursive;
+  --font-sans: 'Montserrat', 'Pretendard', sans-serif;
+  --font-serif: 'Playfair Display', serif;
+}
+
+/* 애니메이션 정의 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes kenBurns {
+  0% {
+    transform: scale(1.0);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes slide {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+/* 슬라이더 도트 스타일 */
+.custom-dots {
+  position: absolute;
+  bottom: 20px;
+  display: flex !important;
+  justify-content: center;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.custom-dots li {
+  margin: 0 4px;
+}
+
+.custom-dots li button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.custom-dots li.slick-active button {
+  background: #2196F3;
+  transform: scale(1.2);
+}
+
+/* Ken Burns 효과 */
+.ken-burns-slide {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ken-burns-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: kenBurns 20s ease-out forwards;
+  transform-origin: center center;
+}
+
+/* 스크롤 진행 바 */
+.scroll-progress-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 2000;
+  background: #e0e0e0;
+}
+
+.scroll-progress-bar {
+  height: 100%;
+  background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+  transition: width 0.1s ease;
+}
+
+/* 히어로 섹션 스타일 */
+.hero-title {
+  color: white;
+  font-weight: 600;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  animation: fadeInUp 1s ease-out;
+  font-family: var(--font-serif);
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  animation: fadeInUp 1s ease-out 0.2s;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  font-family: var(--font-sans);
+}
+
+.hero-description {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+  animation: fadeInUp 1s ease-out 0.3s;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  font-family: var(--font-sans);
+}
+
+/* 웨이브 배경 */
+.wave-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.wave-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  transform: translateY(50%);
+  opacity: 0.1;
+}
+
+/* 스크롤 시 헤더 배경색 변경을 위한 클래스 */
+.header-scrolled {
+  background-color: rgba(255, 255, 255, 0.7) !important; /* 더 투명하게 */
+  backdrop-filter: blur(5px); /* 스크롤 시에만 약간의 블러 효과 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* 로고 스타일 */
+.studio-logo {
+  font-family: var(--font-script);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.studio-logo:hover {
+  transform: scale(1.05);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* 헤더 네비게이션 버튼 스타일 */
+.header-nav-button {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.header-nav-button:hover {
+  transform: translateY(-2px);
+}
+
+/* 섹션 제목 스타일 */
+.section-title {
+  font-weight: 700;
+  background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: var(--font-serif);
+}
+
+/* 특징 카드 스타일 */
+.feature-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(33, 150, 243, 0.2);
+}
+
+/* 플로팅 버튼 스타일 */
+.floating-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.floating-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
+}
+
+.floating-button.primary {
+  background-color: #2196F3;
+  color: white;
+}
+
+.floating-button.secondary {
+  background-color: #FF5722;
+  color: white;
+}
+
+/* 타임라인 아이템 스타일 */
+.timeline-paper {
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.timeline-paper:hover {
+  transform: translateY(-5px);
+}

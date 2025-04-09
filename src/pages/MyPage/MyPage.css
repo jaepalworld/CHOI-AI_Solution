@@ -1,0 +1,62 @@
+/* MyPage 스타일 */
+
+.profile-avatar-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  
+  .profile-avatar {
+    width: 96px;
+    height: 96px;
+  }
+  
+  .avatar-upload-button {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  .avatar-upload-button:hover {
+    background-color: var(--primary-dark-color);
+  }
+  
+  .mypage-container {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  
+  .mypage-paper {
+    padding: 2rem;
+  }
+  
+  .mypage-heading {
+    margin-top: 1rem;
+  }
+  
+  .mypage-tab-content {
+    margin-top: 1.5rem;
+  }
+  
+  .form-button {
+    margin-top: 1rem;
+  }
+  
+  .delete-account-section {
+    margin-top: 2rem;
+  }
+  
+  .delete-button {
+    color: var(--error-color);
+  }
+  
+  /* 변수 정의 */
+  :root {
+    --primary-color: #2196F3;
+    --primary-dark-color: #1976D2;
+    --error-color: #f44336;
+  }

@@ -1,0 +1,52 @@
+/* 이미지 마퀴 컴포넌트 스타일 */
+
+.image-marquee-container {
+    height: 100vh;
+    overflow: hidden;
+    width: 16.666667%;
+    padding-left: var(--direction-padding, 0);
+  }
+  
+  .image-marquee-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: slide 20s linear infinite;
+  }
+  
+  .image-marquee-item {
+    width: 12rem;
+    height: 12rem;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent;
+  }
+  
+  .image-marquee-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  
+  .scroll-up {
+    animation-direction: reverse;
+    --direction-padding: 36px; /* Equivalent to pl: 9 in MUI */
+  }
+  
+  .scroll-down {
+    animation-direction: normal;
+    --direction-padding: -4px; /* Equivalent to pl: -1 in MUI */
+  }
+  
+  @keyframes slide {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-50%);
+    }
+  }

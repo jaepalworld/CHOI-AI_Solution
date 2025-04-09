@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { PhotoCamera } from '@mui/icons-material';
 
-import { auth, db, storage } from '../firebase/firebase';
+import { auth, db, storage } from '../../firebase/firebase';
 import { updateProfile, updatePassword, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
