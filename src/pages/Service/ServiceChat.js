@@ -37,9 +37,7 @@ import {
     serverTimestamp,
     getDocs
 } from 'firebase/firestore';
-
-// WebSocket URL 환경 변수
-const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+import './ServiceChat.css';
 
 // 탭 패널 컴포넌트
 const TabPanel = (props) => {
@@ -74,6 +72,12 @@ const ServiceChat = () => {
     const [isAiTyping, setIsAiTyping] = useState(false);
     const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
 
+    // WebSocket URL 동적 생성 함수
+    const getWebSocketUrl = () => {
+        const host = window.location.hostname;
+        return `ws://${host === 'localhost' ? 'localhost' : host}:8000/ws`;
+    };
+
     // 메시지 목록 자동 스크롤
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -91,58 +95,93 @@ const ServiceChat = () => {
             const maxReconnectAttempts = 5;
 
             const connectWebSocket = () => {
-                websocket = new WebSocket(WS_URL);
+                // 동적 WebSocket URL 사용
+                const wsUrl = getWebSocketUrl();
+                console.log(`WebSocket 연결 시도: ${wsUrl}`);
+                
+                websocket = new WebSocket(wsUrl);
 
                 websocket.onopen = () => {
                     console.log('WebSocket Connected');
+                    setNotification({
+                        open: true,
+                        message: '서버에 연결되었습니다.',
+                        severity: 'success'
+                    });
                     reconnectAttempts = 0;
 
-                    // 사용자 정보 전송 - 중요: 서버에게 사용자 유형을 알림
+                    // 사용자 정보 전송
                     const userType = {
                         userId: user.uid,
                         userName: user.displayName || '사용자',
                         userPhoto: user.photoURL,
-                        type: 'user_connect', // 사용자 연결 식별자 추가
+                        type: 'user_connect',
                         tabType: activeTab === 0 ? 'ai' : 'personal'
                     };
-                    console.log("Sending user connection info:", userType); // 로그 추가
+                    console.log("Sending user connection info:", userType);
                     websocket.send(JSON.stringify(userType));
                 };
 
                 // WebSocket 메시지 수신 처리
                 websocket.onmessage = (event) => {
                     try {
-                        console.log("Raw WebSocket message received:", event.data);
+                        console.log(`메시지 수신: ${event.data.slice(0, 100)}...`);
                         const data = JSON.parse(event.data);
-                        console.log("Parsed WebSocket message:", data);
-
-                        // 이 부분이 중요: 기존 메시지를 유지하면서 새 메시지 추가
+                        
+                        // 연결 성공 메시지 처리
+                        if (data.type === 'connection_established') {
+                            console.log('Connection established:', data.message);
+                            return;
+                        }
+                        
+                        // 에러 메시지 처리
+                        if (data.type === 'error') {
+                            console.error('Server error:', data.message);
+                            setNotification({
+                                open: true,
+                                message: `서버 오류: ${data.message}`,
+                                severity: 'error'
+                            });
+                            return;
+                        }
+                        
+                        // AI 타이핑 상태 처리
+                        if (data.type === 'ai_typing') {
+                            setIsAiTyping(true);
+                            return;
+                        }
+                        
+                        // 일반 메시지 처리
+                        setIsAiTyping(false);
+                        
+                        // 스트리밍 응답 처리 개선
                         setMessages(prev => {
-                            // 이전 메시지와 중복 여부 확인하고 새 메시지만 추가
-                            const isDuplicate = prev.some(msg =>
-                                msg.text === data.text &&
-                                msg.type === data.type &&
-                                Math.abs(new Date(msg.timestamp) - new Date(data.timestamp)) < 1000
+                            // 이미 동일한 chatId의 AI 메시지가 있는지 확인
+                            const existingMsgIndex = prev.findIndex(msg => 
+                                msg.chatId === data.chatId && msg.type === 'ai'
                             );
-
-                            if (isDuplicate) {
-                                console.log("Duplicate message detected, not adding to state");
-                                return prev;
-                            }
-
-                            console.log("Previous messages:", prev);
-                            const newMessage = {
-                                id: Date.now(),
+                            
+                            // 신규 메시지 또는 업데이트할 메시지
+                            const updatedMsg = {
+                                id: existingMsgIndex >= 0 ? prev[existingMsgIndex].id : Date.now(),
                                 ...data,
                                 timestamp: data.timestamp ? new Date(data.timestamp) : new Date()
                             };
-
-                            console.log("Adding new message to state:", newMessage);
-                            // 기존 메시지 배열을 유지하면서 새 메시지 추가
-                            return [...prev, newMessage];
+                            
+                            // 새 메시지 배열 생성
+                            if (existingMsgIndex >= 0) {
+                                // 기존 메시지 업데이트
+                                const newMessages = [...prev];
+                                newMessages[existingMsgIndex] = updatedMsg;
+                                return newMessages;
+                            } else {
+                                // 새 메시지 추가
+                                return [...prev, updatedMsg];
+                            }
                         });
                     } catch (error) {
-                        console.error('메시지 처리 중 오류:', error);
+                        console.error('Message parsing error:', error);
+                        console.error('Raw message:', event.data);
                     }
                 };
 
@@ -155,16 +194,25 @@ const ServiceChat = () => {
                     });
                 };
 
-                websocket.onclose = () => {
-                    console.log('WebSocket Disconnected');
+                websocket.onclose = (event) => {
+                    console.log('WebSocket Disconnected', event);
                     if (reconnectAttempts < maxReconnectAttempts) {
                         reconnectAttempts++;
-                        setTimeout(connectWebSocket, 1000 * reconnectAttempts);
+                        const delay = 1000 * Math.pow(2, reconnectAttempts); // 지수 백오프
+                        console.log(`${delay}ms 후 재연결 시도 (${reconnectAttempts}/${maxReconnectAttempts})`);
+                        
+                        setTimeout(connectWebSocket, delay);
+                        
+                        setNotification({
+                            open: true,
+                            message: `서버 연결이 끊겼습니다. ${reconnectAttempts}/${maxReconnectAttempts} 재연결 시도 중...`,
+                            severity: 'warning'
+                        });
                     } else {
                         setNotification({
                             open: true,
                             message: '서버 연결이 종료되었습니다. 페이지를 새로고침해주세요.',
-                            severity: 'warning'
+                            severity: 'error'
                         });
                     }
                 };
@@ -174,7 +222,7 @@ const ServiceChat = () => {
             setWs(websocket);
 
             return () => {
-                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                if (websocket) {
                     websocket.close();
                 }
             };
@@ -226,18 +274,16 @@ const ServiceChat = () => {
         }
     };
 
-    // 메시지 전송 처리 함수에서
+    // 메시지 전송 처리 함수
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!newMessage.trim() || !user || !ws) return;
 
         try {
             setLoading(true);
+            setIsAiTyping(true);
 
-            // 중요: 메시지 상태를 덮어쓰지 않도록 콘솔 로그 추가
             console.log("Current messages before sending:", messages);
-
-            // 여기서 문제가 발생할 수 있음: 새 메시지를 전송하기 전에 messages 상태를 초기화하는 코드가 있는지 확인
 
             // WebSocket을 통해 메시지 전송
             const messageData = {
@@ -266,11 +312,16 @@ const ServiceChat = () => {
             });
         } catch (error) {
             console.error('메시지 전송 중 오류 발생:', error);
-            // 오류 처리...
+            setNotification({
+                open: true,
+                message: `메시지 전송 실패: ${error.message}`,
+                severity: 'error'
+            });
         } finally {
             setLoading(false);
         }
     };
+
     // 날짜 포맷팅
     const formatDate = (timestamp) => {
         if (!timestamp) return '';
@@ -312,11 +363,7 @@ const ServiceChat = () => {
                         e.target.onerror = null;
                         e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWJvdCI+PHBhdGggZD0iTTEyIDhWNEg4Ij48L3BhdGg+PHBhdGggZD0iTTEyIDRoNCI+PC9wYXRoPjxwYXRoIGQ9Ik0yMiAxMi45MVYxN2EyIDIgMCAwIDEtMiAyaC00di00aDRWOWE2IDYgMCAwIDAtMTIgMHY2aDR2NGgtNGEyIDIgMCAwIDEtMi0ydi00LjA5QTYgNiAwIDEgMSAyMiAxMi45MXoiPjwvcGF0aD48cGF0aCBkPSJNMTYgMTZoLjAxIj48L3BhdGg+PHBhdGggZD0iTTggMTZoLjAxIj48L3BhdGg+PHBhdGggZD0iTTEyIDIwdjIiPjwvcGF0aD48L3N2Zz4=';
                     }}
-                    sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain'
-                    }}
+                    className="agent-icon"
                     alt="AI 상담원"
                 />
             );
@@ -327,24 +374,13 @@ const ServiceChat = () => {
     };
 
     return (
-        <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh', pt: 8 }}>
+        <Box className="service-chat-container">
             <Container maxWidth="md">
                 {/* 헤더 */}
-                <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2
-                }}>
+                <Box className="service-chat-header">
                     <Typography
                         variant="h4"
-                        sx={{
-                            py: 4,
-                            fontWeight: 600,
-                            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
-                        }}
+                        className="service-chat-title"
                     >
                         고객센터 상담
                     </Typography>
@@ -353,14 +389,7 @@ const ServiceChat = () => {
                         color="primary"
                         startIcon={<ExitToAppIcon />}
                         onClick={handleExit}
-                        sx={{
-                            borderRadius: '20px',
-                            '&:hover': {
-                                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                                color: 'white',
-                                borderColor: 'transparent'
-                            }
-                        }}
+                        className="exit-button"
                     >
                         나가기
                     </Button>
@@ -369,30 +398,14 @@ const ServiceChat = () => {
                 {/* 채팅창 */}
                 <Paper
                     elevation={3}
-                    sx={{
-                        height: '70vh',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        borderRadius: 2,
-                        overflow: 'hidden'
-                    }}
+                    className="chat-paper"
                 >
                     {/* 탭 메뉴 */}
                     <Tabs
                         value={activeTab}
                         onChange={handleTabChange}
                         variant="fullWidth"
-                        sx={{
-                            borderBottom: 1,
-                            borderColor: 'divider',
-                            bgcolor: 'white',
-                            '& .MuiTab-root': {           // Tab 컴포넌트의 스타일
-                                paddingTop: '16px',        // 상단 여백 추가
-                                paddingBottom: '16px',     // 하단 여백 추가
-                                minHeight: '72px'          // 최소 높이 설정
-                            }
-
-                        }}
+                        className="chat-tabs"
                     >
                         <Tab
                             icon={
@@ -403,31 +416,17 @@ const ServiceChat = () => {
                                         e.target.onerror = null;
                                         e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWJvdCI+PHBhdGggZD0iTTEyIDhWNEg4Ij48L3BhdGg+PHBhdGggZD0iTTEyIDRoNCI+PC9wYXRoPjxwYXRoIGQ9Ik0yMiAxMi45MVYxN2EyIDIgMCAwIDEtMiAyaC00di00aDRWOWE2IDYgMCAwIDAtMTIgMHY2aDR2NGgtNGEyIDIgMCAwIDEtMi0ydi00LjA5QTYgNiAwIDEgMSAyMiAxMi45MXoiPjwvcGF0aD48cGF0aCBkPSJNMTYgMTZoLjAxIj48L3BhdGg+PHBhdGggZD0iTTggMTZoLjAxIj48L3BhdGg+PHBhdGggZD0iTTEyIDIwdjIiPjwvcGF0aD48L3N2Zz4=';
                                     }}
-                                    sx={{
-                                        width: 24,
-                                        height: 24,
-                                        objectFit: 'cover',
-                                        borderRadius: '50%',
-                                        marginBottom: '8px'
-                                    }}
+                                    className="tab-icon"
                                     alt="AI 상담"
                                 />
                             }
                             label="AI 상담"
-                            sx={{
-                                '&.Mui-selected': {
-                                    color: '#2196F3'
-                                }
-                            }}
+                            className={activeTab === 0 ? "chat-tab-selected" : ""}
                         />
                         <Tab
                             icon={<SupportAgentIcon />}
                             label="1:1 상담"
-                            sx={{
-                                '&.Mui-selected': {
-                                    color: '#2196F3'
-                                }
-                            }}
+                            className={activeTab === 1 ? "chat-tab-selected" : ""}
                         />
                     </Tabs>
 
@@ -461,14 +460,9 @@ const ServiceChat = () => {
                     <Box
                         component="form"
                         onSubmit={handleSendMessage}
-                        sx={{
-                            p: 2,
-                            bgcolor: 'white',
-                            borderTop: 1,
-                            borderColor: 'divider'
-                        }}
+                        className="message-input-container"
                     >
-                        <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box className="message-form">
                             <TextField
                                 fullWidth
                                 size="small"
@@ -476,18 +470,13 @@ const ServiceChat = () => {
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 disabled={loading || !user}
-                                sx={{ bgcolor: 'white' }}
+                                className="message-input"
                             />
                             <Button
                                 variant="contained"
                                 type="submit"
                                 disabled={loading || !user}
-                                sx={{
-                                    background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                                    color: 'white',
-                                    minWidth: '100px',
-                                    width: 'auto'  // width 속성 수정
-                                }}
+                                className="send-button"
                                 endIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
                             >
                                 전송
@@ -498,14 +487,7 @@ const ServiceChat = () => {
 
                 {/* 로그인 안내 */}
                 {!user && (
-                    <Paper
-                        sx={{
-                            mt: 2,
-                            p: 2,
-                            textAlign: 'center',
-                            bgcolor: 'rgba(255, 255, 255, 0.9)'
-                        }}
-                    >
+                    <Paper className="login-notice">
                         <Typography color="text.secondary">
                             채팅을 시작하려면 로그인이 필요합니다.
                         </Typography>
@@ -517,11 +499,7 @@ const ServiceChat = () => {
                     open={exitDialogOpen}
                     onClose={() => setExitDialogOpen(false)}
                     PaperProps={{
-                        sx: {
-                            borderRadius: 2,
-                            width: '100%',
-                            maxWidth: '400px'
-                        }
+                        className: "exit-dialog-paper"
                     }}
                 >
                     <DialogTitle sx={{ pb: 1 }}>
@@ -536,23 +514,14 @@ const ServiceChat = () => {
                     <DialogActions sx={{ p: 2 }}>
                         <Button
                             onClick={() => setExitDialogOpen(false)}
-                            sx={{
-                                color: 'text.secondary',
-                                '&:hover': { backgroundColor: 'rgba(0,0,0,0.05)' }
-                            }}
+                            className="exit-dialog-cancel"
                         >
                             취소
                         </Button>
                         <Button
                             variant="contained"
                             onClick={handleExitConfirm}
-                            sx={{
-                                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                                color: 'white',
-                                '&:hover': {
-                                    background: 'linear-gradient(45deg, #1976D2 30%, #1E9FD1 90%)'
-                                }
-                            }}
+                            className="exit-dialog-confirm"
                         >
                             나가기
                         </Button>
@@ -581,40 +550,18 @@ const ServiceChat = () => {
 
 // 채팅 인터페이스 컴포넌트
 const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, welcomeMessage, isAiTyping }) => (
-    <List
-        sx={{
-            flex: 1,
-            overflow: 'auto',
-            p: 2,
-            bgcolor: 'rgba(255, 255, 255, 0.8)',
-            height: '100%'
-        }}
-    >
+    <List className="chat-interface">
         {/* 환영 메시지 */}
         <ListItem>
             <ListItemAvatar>
-                <Avatar
-                    sx={{
-                        bgcolor: '#2196F3',
-                        width: 40,
-                        height: 40,
-                        '& img': {
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            borderRadius: '50%'
-                        }
-                    }}
-                >
+                <Avatar className="agent-avatar">
                     {icon}
                 </Avatar>
             </ListItemAvatar>
             <ListItemText
                 primary={agentName}
                 secondary={welcomeMessage}
-                sx={{
-                    '& .MuiListItemText-primary': { fontWeight: 600 }
-                }}
+                primaryTypographyProps={{ className: "chat-list-item-text-primary" }}
             />
         </ListItem>
         <Divider variant="inset" />
@@ -623,61 +570,42 @@ const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, 
         {messages.map((message) => (
             <ListItem
                 key={message.id}
-                sx={{
-                    flexDirection: message.type === 'user' ? 'row-reverse' : 'row'
-                }}
+                className={message.type === 'user' ? "chat-list-item-user" : "chat-list-item"}
             >
                 <ListItemAvatar>
                     <Avatar
                         src={message.userPhoto}
-                        sx={message.type === 'user' ?
-                            { ml: 2 } :
-                            {
-                                mr: 2,
-                                bgcolor: '#2196F3',
-                                width: 40,
-                                height: 40,
-                                '& img': {
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    borderRadius: '50%'
-                                }
-                            }
-                        }
+                        className={message.type === 'user' ? "chat-list-item-avatar-user" : "chat-list-item-avatar-agent"}
                     >
                         {message.type === 'user' ? null : icon}
                     </Avatar>
                 </ListItemAvatar>
                 <ListItemText
                     primary={message.userName}
+                    // 여기가 수정된 부분: secondaryTypographyProps를 사용하여 component를 "div"로 변경
+                    secondaryTypographyProps={{ component: "div" }}
                     secondary={
-                        <Box>
-                            <Typography component="span" variant="body2">
+                        <>
+                            <Typography 
+                                component="span" 
+                                variant="body2"
+                                className={`chat-message-bubble ${message.type === 'user' ? 'chat-message-bubble-user' : 'chat-message-bubble-agent'}`}
+                                display="inline-block"
+                            >
                                 {message.text}
                             </Typography>
                             <Typography
                                 component="span"
                                 variant="caption"
-                                sx={{ ml: 1, color: 'text.secondary' }}
+                                className="chat-message-time"
+                                display="inline-block"
                             >
                                 {formatDate(message.timestamp)}
                             </Typography>
-                        </Box>
+                        </>
                     }
-                    sx={{
-                        '& .MuiListItemText-primary': { fontWeight: 600 },
-                        textAlign: message.type === 'user' ? 'right' : 'left',
-                        '& .MuiTypography-body2': {
-                            backgroundColor: message.type === 'user' ? '#2196F3' : '#f5f5f5',
-                            color: message.type === 'user' ? 'white' : 'black',
-                            padding: '8px 12px',
-                            borderRadius: '12px',
-                            display: 'inline-block',
-                            maxWidth: '80%',
-                            wordBreak: 'break-word'  // 텍스트 줄바꿈 개선
-                        }
-                    }}
+                    primaryTypographyProps={{ className: "chat-list-item-text-primary" }}
+                    className={message.type === 'user' ? "chat-list-item-text-user" : "chat-list-item-text-agent"}
                 />
             </ListItem>
         ))}
@@ -686,36 +614,19 @@ const ChatInterface = ({ messages, messagesEndRef, formatDate, icon, agentName, 
         {isAiTyping && (
             <ListItem>
                 <ListItemAvatar>
-                    <Avatar
-                        sx={{
-                            bgcolor: '#2196F3',
-                            width: 40,
-                            height: 40,
-                            '& img': {
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                borderRadius: '50%'
-                            }
-                        }}
-                    >
+                    <Avatar className="agent-avatar">
                         {icon}
                     </Avatar>
                 </ListItemAvatar>
                 <ListItemText
                     primary={agentName}
+                    // 타이핑 인디케이터 부분도 동일하게 수정
+                    secondaryTypographyProps={{ component: "div" }}
                     secondary={
-                        <Box sx={{
-                            backgroundColor: '#f5f5f5',
-                            padding: '8px 12px',
-                            borderRadius: '12px',
-                            display: 'inline-block'
-                        }}>
-                            <Typography component="span" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                답변 중
-                                <CircularProgress size={16} />
-                            </Typography>
-                        </Box>
+                        <Typography component="div" className="typing-indicator">
+                            답변 중
+                            <CircularProgress size={16} style={{ marginLeft: '8px' }} />
+                        </Typography>
                     }
                 />
             </ListItem>
