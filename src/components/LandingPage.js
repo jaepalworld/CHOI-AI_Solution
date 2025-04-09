@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const LandingPage = () => {
     const navigate = useNavigate();
     const [activePanel, setActivePanel] = useState(null);
+    const [hoverPanel, setHoverPanel] = useState(null);
 
     // 패널 데이터 - 첫 번째 패널만 메인으로 연결
     const panels = [
@@ -56,9 +57,10 @@ const LandingPage = () => {
                 position: 'fixed',
                 top: 0,
                 left: 0,
+                position: 'relative',
             }}
         >
-            {panels.map((panel) => (
+            {panels.map((panel, index) => (
                 <Box
                     key={panel.id}
                     sx={{
@@ -70,10 +72,10 @@ const LandingPage = () => {
                         cursor: panel.id === 'juno-hair' ? 'pointer' : 'default',
                         // 패널별 배경 이미지 설정
                         background: panel.id === 'juno-hair'
-                            ? 'url(/assets/images/salon.jpg) center/cover no-repeat'
-                            : panel.id === 'juno-academy'
-                                ? 'url(/assets/images/academy.jpg) center/cover no-repeat'
-                                : 'url(/assets/images/avenue.jpg) center/cover no-repeat',
+                            ? 'url(/assets/images/salon-modern.jpg) center/cover no-repeat'
+                            : panel.id === '준비중입니다.'
+                                ? 'url(/assets/images/lan2.png) center/cover no-repeat'
+                                : 'url(/assets/images/lan3.jpg) center/cover no-repeat',
                         '&:before': {
                             content: '""',
                             position: 'absolute',
@@ -81,18 +83,44 @@ const LandingPage = () => {
                             left: 0,
                             width: '100%',
                             height: '100%',
-                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            backgroundColor: activePanel === panel.id 
+                                ? 'rgba(0, 0, 0, 0.3)' 
+                                : 'rgba(0, 0, 0, 0.9)', // 더 어두운 오버레이 (기본 상태)
                             zIndex: 1,
-                            transition: 'background-color 0.5s ease',
+                            transition: 'background-color 0.8s cubic-bezier(0.77, 0, 0.175, 1)',
                         },
                         '&:hover:before': {
-                            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.3)', // 호버 시 더 밝게
                         }
                     }}
-                    onMouseEnter={() => setActivePanel(panel.id)}
-                    onMouseLeave={() => setActivePanel(null)}
+                    onMouseEnter={() => {
+                        setActivePanel(panel.id);
+                        setHoverPanel(panel.id);
+                    }}
+                    onMouseLeave={() => {
+                        setActivePanel(null);
+                        setHoverPanel(null);
+                    }}
                     onClick={() => handlePanelClick(panel.id)} // 패널 ID 전달
                 >
+                    {/* 패널 사이의 구분선 */}
+                    {index < panels.length - 1 && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: 0,
+                                bottom: 0,
+                                right: 0,
+                                width: '2px',
+                                background: 'rgba(255, 255, 255, 0.5)',
+                                zIndex: 10,
+                                boxShadow: '0 0 10px rgba(255, 255, 255, 0.3)',
+                                opacity: hoverPanel ? 0.3 : 0.7,
+                                transition: 'opacity 0.5s ease',
+                                height: '100%'
+                            }}
+                        />
+                    )}
                     {/* 수직 제목 (비활성 상태) */}
                     <Box
                         sx={{
@@ -115,6 +143,7 @@ const LandingPage = () => {
                                 letterSpacing: '0.2em',
                                 textTransform: 'uppercase',
                                 whiteSpace: 'nowrap',
+                                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)', // 텍스트 가독성 향상
                             }}
                         >
                             {panel.title}
@@ -142,6 +171,7 @@ const LandingPage = () => {
                                 fontWeight: 700,
                                 mb: 2,
                                 textTransform: 'uppercase',
+                                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)', // 텍스트 가독성 향상
                             }}
                         >
                             {panel.title}
@@ -152,7 +182,8 @@ const LandingPage = () => {
                                 sx={{
                                     color: 'white',
                                     fontWeight: 300,
-                                    fontStyle: 'italic'
+                                    fontStyle: 'italic',
+                                    textShadow: '1px 1px 3px rgba(0, 0, 0, 0.7)', // 텍스트 가독성 향상
                                 }}
                             >
                                 {panel.subtitle}

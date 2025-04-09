@@ -1,0 +1,213 @@
+/* ServiceChat.css */
+
+.service-chat-container {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    padding-top: 8px;
+}
+
+.service-chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-chat-title {
+    padding-top: 32px;
+    padding-bottom: 32px;
+    font-weight: 600;
+    background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.exit-button {
+    border-radius: 20px;
+}
+
+.exit-button:hover {
+    background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+    color: white;
+    border-color: transparent;
+}
+
+.chat-paper {
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.chat-tabs {
+    border-bottom: 1px solid;
+    border-color: divider;
+    background-color: white;
+}
+
+.chat-tabs .MuiTab-root {
+    padding-top: 16px;
+    padding-bottom: 16px;
+    min-height: 72px;
+}
+
+.chat-tab-selected {
+    color: #2196F3;
+}
+
+.tab-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 8px;
+}
+
+.chat-interface {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+    background-color: rgba(255, 255, 255, 0.8);
+    height: 100%;
+}
+
+.message-input-container {
+    padding: 16px;
+    background-color: white;
+    border-top: 1px solid;
+    border-color: divider;
+}
+
+.message-form {
+    display: flex;
+    gap: 8px;
+}
+
+.message-input {
+    background-color: white;
+}
+
+.send-button {
+    background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+    color: white;
+    min-width: 100px;
+    width: auto;
+}
+
+.send-button:hover {
+    background: linear-gradient(45deg, #1976D2 30%, #1E9FD1 90%);
+}
+
+.login-notice {
+    margin-top: 16px;
+    padding: 16px;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.exit-dialog-paper {
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.exit-dialog-cancel {
+    color: rgba(0, 0, 0, 0.6); /* text.secondary의 일반적인 색상값 */
+}
+
+.exit-dialog-cancel:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.exit-dialog-confirm {
+    background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+    color: white;
+}
+
+.exit-dialog-confirm:hover {
+    background: linear-gradient(45deg, #1976D2 30%, #1E9FD1 90%);
+}
+
+.agent-avatar {
+    background-color: #2196F3;
+    width: 40px;
+    height: 40px;
+}
+
+.agent-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.chat-list-item {
+    flex-direction: row;
+}
+
+.chat-list-item-user {
+    flex-direction: row-reverse;
+}
+
+.chat-list-item-avatar-user {
+    margin-left: 16px;
+}
+
+.chat-list-item-avatar-agent {
+    margin-right: 16px;
+    background-color: #2196F3;
+    width: 40px;
+    height: 40px;
+}
+
+.chat-list-item-avatar-agent img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.chat-list-item-text-primary {
+    font-weight: 600;
+}
+
+.chat-list-item-text-user {
+    text-align: right;
+}
+
+.chat-list-item-text-agent {
+    text-align: left;
+}
+
+.chat-message-bubble {
+    padding: 8px 12px;
+    border-radius: 12px;
+    display: inline-block;
+    max-width: 80%;
+    word-break: break-word;
+}
+
+.chat-message-bubble-user {
+    background-color: #2196F3;
+    color: white;
+}
+
+.chat-message-bubble-agent {
+    background-color: #f5f5f5;
+    color: black;
+}
+
+.chat-message-time {
+    margin-left: 8px;
+    color: rgba(0, 0, 0, 0.6); /* text.secondary의 일반적인 색상값 */
+}
+
+.typing-indicator {
+    background-color: #f5f5f5;
+    padding: 8px 12px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
