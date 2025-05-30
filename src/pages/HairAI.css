@@ -247,3 +247,56 @@
 .timeline-paper:hover {
   transform: translateY(-5px);
 }
+
+/* 슬라이더 배경 이미지 스타일 */
+.hero-background {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  /* background-image: url('/assets/images/jomeong.jpg'); */
+  background-color: #333333; /* 짙은 회색 */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* 중앙 컨텐츠 컨테이너 스타일 */
+.content-container {
+  max-width: 1200px;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Ken Burns 이미지 효과 개선 */
+.ken-burns-slide {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ken-burns-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 이미지 비율 유지하면서 컨테이너에 맞춤 */
+  animation: kenBurns 20s ease-out forwards;
+  transform-origin: center center;
+}
+
+/* 반응형 스타일 조정 */
+@media (max-width: 1200px) {
+  .content-container {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 768px) {
+  .content-container {
+    max-width: 100%;
+  }
+}

@@ -1,12 +1,10 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HairHeader from './HairHeader';
-import {
-  Typography, Container, Box, Button, Card, CardMedia, CardContent, Grid, 
+import {Typography, Container, Box, Button, Card, CardMedia, CardContent, Grid, 
   Fade, Zoom, CircularProgress, Paper
 } from '@mui/material';
-import {
-  Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot
+import {Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot
 } from '@mui/lab';
 
 // TickerSlider 임포트
@@ -275,69 +273,88 @@ const HairAI = () => {
         headerScrolled={headerScrolled}
       />
 
-      {/* 히어로 섹션 영역에 상단 여백 추가 */}
-      <Box sx={{ 
-        position: 'relative', 
-        width: '100%', 
-        height: 'calc(100vh + 45px)', // 티커 높이(45px)만큼 더 늘려서 여백 제거
-        overflow: 'hidden',
-        marginTop: '0' // 여백 제거
-      }}>
-        <WaveBackground />
-        <Slider {...sliderSettings}>
-          {sliderContent.map((content, index) => (
-            <Box key={index} sx={{ position: 'relative', height: '100vh' }}>
-              <Box className="ken-burns-slide">
-                <Box
-                  component="img"
-                  src={`/assets/images/${content.image}`}
-                  alt={`Slide ${index + 1}`}
-                  className="ken-burns-image"
-                />
-              </Box>
-              <Fade in timeout={1000}>
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 100%)',
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    padding: '0 10%',
-                    paddingBottom: '5%'
-                  }}
+      {/* 히어로 섹션 영역 */}
+<Box sx={{ 
+  position: 'relative', 
+  width: '100%', 
+  height: 'calc(100vh + 45px)',
+  overflow: 'hidden',
+  marginTop: '0',
+  // 조명 사진 배경으로 설정
+  backgroundImage: `url(${process.env.PUBLIC_URL}/assets/images/jo1.jpg)`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat'
+}}>
+  <WaveBackground />
+  <Slider {...sliderSettings}>
+    {sliderContent.map((content, index) => (
+      <Box key={index} sx={{ position: 'relative', height: '100vh' }}>
+        {/* 중앙 이미지 컨테이너 */}
+        <Box sx={{ 
+          maxWidth: '1200px',
+          width: '100%',
+          margin: '0 auto',
+          height: '100%',
+          position: 'relative',
+          zIndex: 1 // 배경보다 위에 오도록 설정
+        }}>
+          <Box className="ken-burns-slide">
+            <Box
+              component="img"
+              src={`/assets/images/${content.image}`}
+              alt={`Slide ${index + 1}`}
+              className="ken-burns-image"
+              sx={{
+                objectFit: 'contain',
+                maxHeight: '100%',
+                maxWidth: '100%'
+              }}
+            />
+          </Box>
+          <Fade in timeout={1000}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'flex-end',
+                padding: '0 10%',
+                paddingBottom: '5%'
+              }}
+            >
+              <Box sx={{ maxWidth: '500px' }}>
+                <Typography
+                  variant="h1"
+                  className="hero-title"
+                  sx={{ fontSize: { xs: '2.5rem', md: '4rem' }, mb: 1 }}
                 >
-                  <Box sx={{ maxWidth: '500px' }}>
-                    <Typography
-                      variant="h1"
-                      className="hero-title"
-                      sx={{ fontSize: { xs: '2.5rem', md: '4rem' }, mb: 1 }}
-                    >
-                      {content.title}
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="hero-subtitle"
-                      sx={{ mb: 1 }}
-                    >
-                      {content.subtitle}
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      className="hero-description"
-                    >
-                      {content.description}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Fade>
+                  {content.title}
+                </Typography>
+                <Typography
+                  variant="h5"
+                  className="hero-subtitle"
+                  sx={{ mb: 1 }}
+                >
+                  {content.subtitle}
+                </Typography>
+                <Typography
+                  variant="h6"
+                  className="hero-description"
+                >
+                  {content.description}
+                </Typography>
+              </Box>
             </Box>
-          ))}
-        </Slider>
+          </Fade>
+        </Box>
       </Box>
+    ))}
+  </Slider>
+</Box>
 
       {/* 기능 섹션 */}
       <Container sx={{ py: 12 }}>
